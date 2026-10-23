@@ -10,6 +10,12 @@ separate local check in a temporary workspace. Instrument scope is frozen at
 creation and remains identical through validation and publication; there is no
 selection at publishing. Validation alone creates no archival obligation.
 
+Initial workflow-testing snapshots are disposable and may be retired after
+verification through separately authorized cleanup. They are not permanent
+scientific releases. Retain immutable bytes until retirement; never reuse their
+testing identities for different bytes. No cleanup has been performed or
+authorized. Production retention remains indefinite.
+
 ## 1. Re-establish live deployment status
 
 - [x] Confirm the publisher, website and consumer checkouts are at the expected

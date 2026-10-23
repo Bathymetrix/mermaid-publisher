@@ -31,6 +31,15 @@ empty. Infrastructure deployment and test acceptance do not authorize production
 publication, a first release tag or claims of data availability.
 Licensing/citation and explicit upload authorization remain required.
 
+Initial workflow-testing snapshots are disposable qualification artifacts, not
+permanent scientific releases. After workflow verification, an explicitly
+authorized cleanup may retire their hosted objects and local archive evidence.
+Indefinite availability is not promised for these initial testing URLs. Payloads
+and manifests remain immutable until retirement; a retired testing identity must
+never be reused for different bytes. Retirement intentionally ends pinned-link
+availability, with cache cleanup considered separately. Production artifacts
+retain their indefinite-retention policy. No cleanup is authorized by this rule.
+
 ## Relative collection paths
 
 The same relative download agreement applies within a chosen collection:

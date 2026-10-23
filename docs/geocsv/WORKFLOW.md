@@ -51,12 +51,25 @@ geocsv/
   publications/                successful-publication receipts
 ```
 
-Retain published products and evidence indefinitely. Back up this archive;
-Git history alone is not a backup. No GitHub remote or automatic push is needed.
+Retain production products and evidence indefinitely. Initial workflow-testing
+snapshots may be retired after verification through an explicitly authorized
+cleanup; they are not permanent scientific releases. Their bytes remain immutable
+until retirement, and retired testing identities cannot be reused for different
+bytes. Cleanup must account for testing objects/pointers, caches and local
+artifacts; deleting working-tree files alone does not remove their Git history.
+Do not delete or rewrite anything without that separate authorization.
+Back up the archive while it is retained; Git history alone is not a backup.
+No GitHub remote or automatic push is needed.
 Original MiniSEED/SAC data and source Git objects are not copied. A full source
 commit identifier is recorded, not a Git bundle. Unpublished candidates and
 failed evidence remain distinguishable from successful publication receipts;
-no cleanup policy is implemented.
+no automatic cleanup is implemented.
+
+Remote testing URLs use `/geocsv/testing/` and R2 keys use `geocsv/testing/`.
+The local layout above does not contain a `testing/` directory: testing status
+is recorded in each frozen manifest and selection in its staging inventory.
+The current archive contains only initial testing artifacts. Retirement is an
+operator procedure; there is no deletion command in the publisher.
 
 Source provenance is local, immutable and bound by report SHA-256. It is not in
 the public manifest's GeoCSV files list and is not uploaded. An identical retry

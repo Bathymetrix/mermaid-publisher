@@ -38,10 +38,14 @@ for ignored inputs. Never copy original waveform archives into the publication
 archive; retain reports and fingerprints instead.
 
 The external archive is `$MERMAID/publisher`, a separate local Git repository;
-GeoCSV uses its `geocsv/` subdirectory. Retain published payloads, manifests,
-inventories, reports and receipts indefinitely. Credentials and private
-operational configuration stay outside both checkouts. Resolve credentials
-through the SDK provider; do not inspect or print them.
+GeoCSV uses its `geocsv/` subdirectory. Retain production payloads, manifests,
+inventories, reports and receipts indefinitely. Initial workflow-testing
+snapshots are disposable and may be retired after verification through an
+explicitly authorized cleanup. Keep their bytes immutable until retirement;
+never reuse a retired testing identity for different bytes. Cleanup of hosted
+objects, caches, local artifacts or Git history is not automatically authorized.
+Credentials and private operational configuration stay outside both checkouts.
+Resolve credentials through the SDK provider; do not inspect or print them.
 
 A user-authorized successful publication includes a scoped local archive commit.
 Commit only that publication's artifacts and preserve unrelated staged work.
