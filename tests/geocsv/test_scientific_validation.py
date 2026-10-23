@@ -4,6 +4,7 @@ from copy import deepcopy
 import json
 from pathlib import Path
 import sys
+import subprocess
 import tempfile
 import unittest
 from unittest.mock import patch
@@ -224,6 +225,69 @@ class ArchiveValidation(unittest.TestCase):
         self.assertEqual(report["status"], "passed", report["failures"])
         self.assertIsNone(report["pairs"][0]["measurements"]["depth_error_m"])
         require_acceptance(self.candidate, self.report_path, self.source)
+
+    def test_full_and_selected_batches_have_independent_complete_acceptance(self):
+        second = self.source / "second"
+        second.mkdir()
+        second_geo = second / "geo_DET_REQ.csv"
+        second_geo.write_text(self.geo.read_text().replace("P0006", "P0045"))
+        trace = self.trace.copy()
+        trace.stats.station = "P0045"
+        trace.write(str(second / self.mseed.name), format="MSEED")
+        reference = SACTrace.read(str(self.sac))
+        reference.kstnm = "P0045"
+        second_sac = second / self.sac.name
+        reference.write(str(second_sac))
+        self.inventory.write_text(self.inventory.read_text() + "second,P0045\n")
+        full = create_snapshot(self.source, self.root / "full-check", self.inventory)
+        full_report = self.root / "full-check/validation/full.json"
+        report = validate_snapshot(full, self.source, full_report)
+        self.assertEqual(report["summary"]["passed"], 2, report["failures"])
+        require_acceptance(full, full_report, self.source)
+
+        selected = create_snapshot(self.source, self.root / "selected-check", self.inventory,
+                                   instruments=["P0006"])
+        selected_report = self.root / "selected-check/validation/selected.json"
+        report = validate_snapshot(selected, self.source, selected_report)
+        self.assertEqual(report["summary"]["passed"], 1, report["failures"])
+        self.assertEqual([item["instrument_id"] for item in report["instruments"]], ["P0006"])
+        self.assertTrue(all(item["instrument_id"] == "P0006" for item in report["source_files"]))
+        require_acceptance(selected, selected_report, self.source)
+        with self.assertRaisesRegex(AcceptanceError, "different manifest"):
+            require_acceptance(selected, full_report, self.source)
+        # Ordinary source directories can change outside the selected batch.
+        second_sac.write_bytes(second_sac.read_bytes() + b"changed outside selection")
+        require_acceptance(selected, selected_report, self.source)
+        with self.assertRaisesRegex(AcceptanceError, "fingerprints"):
+            require_acceptance(full, full_report, self.source)
+        staging = selected.parent.parent / "staging" / selected.name / "inventory.json"
+        inventory = json.loads(staging.read_bytes())
+        inventory["instrument_ids"].append("P0045")
+        staging.write_bytes(json_bytes(inventory))
+        with self.assertRaisesRegex(AcceptanceError, "frozen instrument selection"):
+            require_acceptance(selected, selected_report, self.source)
+
+    def test_create_and_validate_cli_need_no_git_archive_or_publication(self):
+        workspace = self.root / "temporary-check"
+        scripts = Path(__file__).resolve().parents[2] / "scripts/geocsv"
+        created = subprocess.run([
+            sys.executable, "-B", str(scripts / "create_snapshot.py"),
+            "--source-root", str(self.source), "--workspace", str(workspace),
+            "--inventory", str(self.inventory), "--instruments", "P0006",
+        ], capture_output=True, text=True)
+        self.assertEqual(created.returncode, 0, created.stderr)
+        candidate = Path(created.stdout.strip())
+        report_path = workspace / "validation/check.json"
+        checked = subprocess.run([
+            sys.executable, "-B", str(scripts / "validate_snapshot.py"),
+            "--candidate", str(candidate), "--source-root", str(self.source),
+            "--report", str(report_path),
+        ], capture_output=True, text=True)
+        self.assertEqual(checked.returncode, 0, checked.stderr)
+        require_acceptance(candidate, report_path, self.source)
+        self.assertFalse((workspace / ".git").exists())
+        self.assertFalse((workspace / "publications").exists())
+        self.assertFalse(any(path.suffix in {".mseed", ".sac"} for path in workspace.rglob("*")))
 
 
 if __name__ == "__main__":

@@ -11,7 +11,7 @@ flowchart TB
     upstream["automaid: scientific generation"] --> source["$MERMAID/processed — read only"]
     source --> create["mermaid-publisher/scripts/geocsv/create_snapshot.py"]
     inspect["inspect_snapshot.py — internal integrity checks"] -.-> create
-    create --> snapshot["$MERMAID/publisher/geocsv/snapshots/{ID}"]
+    create --> snapshot["workspace/snapshots/{ID}: frozen instrument scope"]
     snapshot --> validate["validate_snapshot.py"]
     source --> validate
     api["mermaid-geocsv: read → associate → write_sac"] -.-> validate
@@ -37,7 +37,11 @@ cleanliness and HEAD before/after staging and during validation/gating. Linked
 worktrees are supported. Git state does not account for ignored inputs: retain
 all existing byte inventories and change checks.
 
-The archive is a separate local Git repository at `$MERMAID/publisher`:
+Creation and validation accept ordinary local workspaces, including temporary
+directories, without Git or an archive. They do not upload, commit or imply
+publication intent. For actual publication, the workspace must be the `geocsv/`
+directory in a dedicated persistent Git archive. The canonical archive is
+`$MERMAID/publisher`:
 
 ```text
 geocsv/
@@ -61,6 +65,27 @@ under the same ID raises. Do not edit frozen manifests or historical reports.
 
 ## Commands
 
+### Local validation without publication
+
+Use an ordinary temporary workspace for a full-corpus check:
+
+```bash
+GEOCSV_CHECK_WORKSPACE="$(mktemp -d)"
+.venv/bin/python scripts/geocsv/create_snapshot.py \
+  --source-root "$MERMAID/processed" \
+  --workspace "$GEOCSV_CHECK_WORKSPACE" \
+  --inventory /path/to/reviewed-instruments.csv
+```
+
+Use the candidate path printed by creation with `validate_snapshot.py` and put
+`--report` outside the frozen candidate, for example under
+`$GEOCSV_CHECK_WORKSPACE/validation/`. Omit `--instruments` for the full corpus;
+add `--instruments P0006 P0045` to check only that batch. No Git initialization,
+archive copying or publication is required. Disposable check products may be
+removed when no longer needed; published artifacts retain their archival policy.
+
+### Publication candidate
+
 Use this checkout's `.venv`. The initial archive has already been initialized
 locally during migration; for a new installation initialize it explicitly:
 
@@ -70,13 +95,27 @@ printf '* -text -filter -ident\n' > "$MERMAID/publisher/.gitattributes"
 .venv/bin/python scripts/geocsv/create_snapshot.py \
   --source-root "$MERMAID/processed" \
   --workspace "$MERMAID/publisher/geocsv" \
-  --inventory /path/to/reviewed-instruments.csv
+  --inventory /path/to/reviewed-instruments.csv \
+  --instruments P0006 P0045
 ```
 
 The reviewed CSV has exactly `instrument_serial,instrument_id` columns. Every
-source serial must be accounted for; Station must agree. Recordless sources
+source serial must be accounted for even with an explicit selection; Station
+must agree for in-scope instruments. Selection happens only at creation and
+is immutable. Unknown or duplicate IDs raise. Recordless sources in scope
 are excluded and inventoried. Supply `--previous-manifest` after first publication
 to detect unexpectedly missing instruments. Pause upstream processing first.
+
+Create, validate and publish use the same frozen manifest. Publishing has no
+instrument-selection switch. The P0006/P0045 publication candidate needs its own
+fresh report even after a separate full-corpus check passes. The archive retains
+only that candidate's payloads and evidence. Unselected payloads and original
+waveform archives are not copied into it.
+
+Within one workspace or hosted collection, a timestamp identifies exactly one
+immutable inventory. Changing selection under an existing timestamp raises;
+use separate local workspaces for different check batches. Expanding an already
+hosted inventory requires a new upstream timestamp, not an edited manifest.
 
 Using the candidate ID printed by creation, set a task-specific shell variable:
 
@@ -145,8 +184,9 @@ reuse objects; conflicts never overwrite them.
 
 Publisher 0.1.0/report schema 3 preserve scientific comparison rules from the
 website's schema-2 workflow. Historical 43,365-pair acceptance is retained as
-historical evidence, not reused. Fresh schema-3 complete-corpus validation is
-required for a new candidate. Scientific acceptance, deployment and test uploads
+historical evidence, not reused. Fresh schema-3 validation of every original pair
+in the frozen instrument scope is required for each candidate. Scientific
+acceptance, deployment and test uploads
 do not authorize production promotion or a first formal release.
 
 Offline tests cover scientific comparisons, changed inputs/evidence, clean Git

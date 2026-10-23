@@ -5,6 +5,11 @@ testing service. The production collection remains inactive. Deployment and
 uploads require separate explicit authorization. Credentials and private
 operational configuration stay outside both repositories.
 
+Hosted testing is limited to P0006 and P0045. Full-corpus validation remains a
+separate local check in a temporary workspace. Instrument scope is frozen at
+creation and remains identical through validation and publication; there is no
+selection at publishing. Validation alone creates no archival obligation.
+
 ## 1. Re-establish live deployment status
 
 - [x] Confirm the publisher, website and consumer checkouts are at the expected
@@ -18,12 +23,14 @@ operational configuration stay outside both repositories.
   Pages 404 page. No production pointer was exposed at this URL.
 - [x] Read the public GeoCSV landing page. It identifies hosted data as testing
   only and states that production downloads are not available.
-- [ ] Recheck authoritative DNS, Cloudflare route/binding state, R2 bucket
-  state, and DNSSEC/DS state through current account or resolver evidence.
-  Shell DNS lookup is unavailable in the current execution environment; public
-  page responses do not establish DNSSEC state.
-- [ ] Record current Cloudflare state in the approved private operational
-  location, not in either repository.
+- [x] Recheck authoritative DNS and DNSSEC/DS through two independent public
+  resolvers. Both confirm Cloudflare authority and no DS record on 2026-10-23.
+- [x] Confirm the private testing bucket is empty through the S3 API and its
+  testing latest pointer is absent.
+- [x] Confirm the intended Worker does not yet exist in the dashboard.
+- [ ] Review existing zone Worker routes before the proposed deployment.
+- [x] Retain raw DNS and R2 check evidence in the approved private operational
+  location outside both repositories.
 
 ## 2. Resolve data licensing and citation
 
@@ -31,38 +38,48 @@ operational configuration stay outside both repositories.
   citation pages. The policy says release rules can vary by contributing
   organization and instrument; the FDSN network page identifies the MH DOI
   `10.7914/SN/MH` for citation.
-- [ ] Confirm the selected candidate's instrument-by-instrument reuse and
-  redistribution rights, including any embargo or owner permission. A network
-  DOI is citation guidance, not a data license or proof of redistribution
-  rights.
-- [ ] Decide the license and citation text for the hosted dataset and its
-  landing-page description.
-- [ ] Record the decision before preparing any upload. Do not infer licensing
-  from software repository licenses or prior hosting.
+- [x] Establish the approved testing scope: P0006 and P0045 only. Broader
+  distribution and full-corpus licensing remain deferred.
+- [x] Prepare the testing-only scope and MH network DOI in the landing-page
+  source. No general data license is inferred from the software license or the
+  limited testing authorization.
+- [ ] Ship and verify that landing-page description before data uploads.
 
 ## 3. Prepare isolated private testing hosting
 
-- [ ] Choose and create the private R2 bucket through the approved account
-  workflow; keep public bucket access disabled.
-- [ ] Establish least-privilege operator access for the publisher's R2/S3
-  operations. Keep credentials in the SDK provider or approved secret store.
-- [ ] Prepare external Worker deployment configuration using the existing
+- [x] Activate R2 through the account dashboard.
+- [x] Create the dedicated testing bucket with public access disabled and no
+  custom domain.
+- [x] Establish a bucket-scoped Object Read & Write operator token and save it
+  in the SDK credential provider. Read-only ListObjectsV2/HeadObject checks
+  passed without credential output; live conditional writes remain untested.
+- [x] Prepare external Worker deployment configuration using the existing
   `workers/geocsv/wrangler.example.jsonc` template and the approved private
-  bucket binding.
-- [ ] Confirm the Worker remains read-only and serves only the existing route
+  bucket binding. Pin Wrangler 4.152.0 privately and verify its local dry-run
+  build. Resolve the entry point relative to the external config location.
+- [x] Confirm the Worker remains read-only and serves only the existing route
   design. Keep testing objects under `geocsv/testing` and future production
-  objects under the separate `geocsv/` collection namespace.
+  objects under the separate `geocsv/` collection namespace. All 11 serving tests
+  pass, including the testing header on convenience redirects.
+- [x] Verify the separate scoped Wrangler login and intended account, then pin
+  private deployment configuration to the account used by the tested R2 endpoint.
 - [ ] Review the concrete deployment change and recovery procedure before
   deployment. Deployment remains unauthorized until explicitly approved.
 
 ## 4. Prepare and accept the exact candidate
 
-- [ ] Resolve instrument licensing and citation requirements for the selected
-  candidate.
-- [ ] Create and freeze a candidate from the read-only canonical
-  `$MERMAID/processed` source into `$MERMAID/publisher/geocsv/snapshots/`.
-- [ ] Produce a fresh schema-3 full-archive report for that exact candidate
-  using the pinned `mermaid-geocsv` 0.24.0 consumer baseline.
+- [x] Support immutable selection at creation with `--instruments P0006 P0045`.
+  Default creation retains complete-source accounting. Selected creation uses
+  local staging schema 2; report schema 3 and the download format are unchanged.
+- [x] Verify create and validate in an ordinary temporary workspace without
+  Git, archival, uploads or publication intent.
+- [ ] Run fresh full-corpus validation in a temporary workspace with the
+  reviewed complete source mapping. Retain the result locally for inspection;
+  this check does not populate the publication archive.
+- [ ] Create the separate P0006/P0045 candidate from the read-only canonical
+  `$MERMAID/processed` source in `$MERMAID/publisher/geocsv/snapshots/`.
+- [ ] Produce a fresh schema-3 exhaustive report for that exact two-instrument
+  candidate using the pinned `mermaid-geocsv` 0.24.0 consumer baseline.
 - [ ] Require the publication gate to accept the candidate, source provenance,
   complete inventory, pair coverage and report. Historical schema-2 acceptance
   for 43,365 pairs cannot satisfy this step.
@@ -104,6 +121,20 @@ apart from its untracked `.gitattributes` and `.gitignore`; no candidate or
 schema-3 report was available to inspect. No deployment, upload, DNS change,
 candidate creation or credential access was performed.
 
+Subsequent dashboard setup confirmed R2 activation, creation of a private
+testing bucket and a bucket-scoped publisher token. The SDK provider resolved
+the named profile and read-only API access passed; the bucket is empty and its
+testing pointer is absent. Two independent DNS resolvers confirmed Cloudflare
+authority and no DS. Private deployment configuration and a pinned local Worker
+build are prepared; no Worker has been deployed. Wrangler login and account
+access are verified. Anonymous GET/HEAD rechecks returned 200 for the landing
+page on apex/www and 404 for both unpublished pointers, through Cloudflare.
+The selection/workspace implementation passed 55 offline publisher
+tests with the fixed consumer baseline, including memory/disk downloads,
+independent full/selected acceptance and scoped fixture-archive recording. Real
+source inspection confirmed a clean Git source with 112 GeoCSV source
+directories; no new corpus validation or publication candidate has been created.
+
 The public GeoCSV landing page returned the expected page and states that
 hosted data are testing only and production downloads are unavailable.
 
@@ -116,7 +147,7 @@ data policy](https://earthscopeoceans.princeton.edu/data/metadata.html) and
 [FDSN MH network record](https://www.fdsn.org/networks/detail/MH/).
 
 The public endpoints were reachable using the Codex desktop in-app browser; no
-browser access change is needed for read-only public endpoint checks. Shell DNS
-queries are blocked in this execution environment. Cloudflare account state
-requires authorized access to the relevant account view or current operator
-evidence.
+browser access change is needed for read-only public endpoint checks. Authorized
+network checks subsequently re-established DNS and SDK access. Raw operational
+evidence, account details, actual configuration and tool output remain in the
+approved private directory outside the repositories.

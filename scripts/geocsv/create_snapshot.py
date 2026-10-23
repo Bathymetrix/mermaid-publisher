@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Freeze a complete GeoCSV snapshot in the external archive; never edit sources."""
+"""Freeze a GeoCSV snapshot in a local workspace; never edit sources."""
 
 import argparse
 import csv
@@ -36,7 +36,7 @@ def read_inventory(path):
     return mapping
 
 
-def create_snapshot(source_root, workspace, inventory_path, previous_manifest=None):
+def create_snapshot(source_root, workspace, inventory_path, previous_manifest=None, *, instruments=None):
     source_root = Path(source_root).resolve(strict=True)
     workspace = require_external_workspace(workspace, source_root)
     provenance = source_provenance(source_root)
@@ -46,6 +46,16 @@ def create_snapshot(source_root, workspace, inventory_path, previous_manifest=No
     unlisted = discovered - set(mapping)
     if missing or unlisted:
         raise ValueError(f"incomplete inventory: missing sources={sorted(missing)}, unlisted serials={sorted(unlisted)}")
+    selected = None
+    if instruments is not None:
+        selected = [check_instrument(value) for value in instruments]
+        if not selected or len(set(selected)) != len(selected):
+            raise ValueError("instrument selection must be nonempty and contain no duplicates")
+        unknown = set(selected) - set(mapping.values())
+        if unknown:
+            raise ValueError(f"unknown selected instruments: {sorted(unknown)}")
+        selected.sort()
+        mapping = {serial: instrument for serial, instrument in mapping.items() if instrument in selected}
     if previous_manifest:
         previous = check_manifest(read_json(previous_manifest))
         missing_ids = {entry["instrument_id"] for entry in previous} - set(mapping.values())
@@ -111,20 +121,22 @@ def create_snapshot(source_root, workspace, inventory_path, previous_manifest=No
                 raise FileExistsError(f"conflicting immutable snapshot: {destination}")
             if (destination / "source_provenance.json").read_bytes() != provenance_payload:
                 raise FileExistsError(f"conflicting immutable source provenance: {destination}")
-            write_staging_inventory(workspace, manifest, inputs)
+            write_staging_inventory(workspace, manifest, inputs, selected)
             return destination
         # Rename the whole candidate only when complete. No partial frozen release.
         # A concurrent creator cannot replace an existing nonempty directory.
         os.rename(candidate, destination)
     verify_candidate(destination)
-    write_staging_inventory(workspace, manifest, inputs)
+    write_staging_inventory(workspace, manifest, inputs, selected)
     return destination
 
 
-def write_staging_inventory(workspace, manifest, inputs):
+def write_staging_inventory(workspace, manifest, inputs, selected=None):
     """Retain complete input/exclusion accounting locally, separate from published bytes."""
     path = workspace / "staging" / release_component(manifest["release_id"]) / "inventory.json"
     value = {"schema_version": 1, "release_id": manifest["release_id"], "instruments": inputs}
+    if selected is not None:
+        value.update(schema_version=2, instrument_ids=selected)
     payload = json_bytes(value)
     path.parent.mkdir(parents=True, exist_ok=True)
     if path.exists():
@@ -141,11 +153,14 @@ def main():
     parser.add_argument("--workspace", required=True, type=Path)
     parser.add_argument("--inventory", required=True, type=Path,
                         help="reviewed CSV mapping: instrument_serial,instrument_id")
+    parser.add_argument("--instruments", nargs="+", metavar="ID",
+                        help="freeze only these instrument IDs; omitted means every source instrument")
     parser.add_argument("--previous-manifest", type=Path,
                         help="required operationally after first publication to detect missing instruments")
     args = parser.parse_args()
     try:
-        candidate = create_snapshot(args.source_root, args.workspace, args.inventory, args.previous_manifest)
+        candidate = create_snapshot(args.source_root, args.workspace, args.inventory, args.previous_manifest,
+                                    instruments=args.instruments)
         print(candidate)
         sidecar = args.workspace.resolve() / "staging" / candidate.name / "inventory.json"
         excluded = [item["instrument_id"] for item in read_json(sidecar)["instruments"] if item["status"] == "excluded_recordless"]

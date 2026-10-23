@@ -40,8 +40,11 @@ class FetchCompatibility(unittest.TestCase):
                 b"#dataset: GeoCSV\n#created: 2026-10-21T22:48:33.277000001Z\n"
                 b"#field_type: string,float\nStation,Latitude\nP0006,-14.4\n")
             inventory = root / "instruments.csv"
-            inventory.write_text("instrument_serial,instrument_id\nserial,P0006\n")
-            candidate = create_snapshot(source.parent, root / "work", inventory)
+            other = source.parent / "other"
+            other.mkdir()
+            (other / "geo_DET_REQ.csv").write_bytes(source.joinpath("geo_DET_REQ.csv").read_bytes().replace(b"P0006", b"P0045"))
+            inventory.write_text("instrument_serial,instrument_id\nserial,P0006\nother,P0045\n")
+            candidate = create_snapshot(source.parent, root / "work", inventory, instruments=["P0006"])
             manifest = json.loads((candidate / "manifest.json").read_bytes())
             release = manifest["release_id"]
             prefix = f"/geocsv/releases/{quote(release, safe='')}/"
@@ -75,6 +78,7 @@ class FetchCompatibility(unittest.TestCase):
                 self.assertEqual(historical[0].content, (fixtures / "P0006.geocsv").read_bytes())
                 requests.clear()
                 results = geocsv.fetch(base_url=base, output_dir=None)
+                self.assertEqual([item.provenance.instrument_id for item in results], ["P0006"])
                 self.assertEqual(sum(path.endswith("latest.json") for path, _ in requests), 1)
                 self.assertEqual(results[0].provenance.release_id, release)
                 self.assertEqual(geocsv.read(results)[0].loc[0, "Station"], "P0006")

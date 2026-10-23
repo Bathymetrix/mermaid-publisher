@@ -211,6 +211,30 @@ class PublicationCommand(unittest.TestCase):
         self.assertEqual(caught.exception.code, 1)
         self.assertEqual(self.store.writes, [])
 
+    def test_selected_snapshot_is_validated_uploaded_and_archived_as_frozen(self):
+        from create_snapshot import create_snapshot
+        self.geo.write_text(self.geo.read_text().replace("2026-10-21T", "2026-10-22T"))
+        unselected = self.source / "unselected"
+        unselected.mkdir()
+        (unselected / "geo_DET_REQ.csv").write_text(self.geo.read_text().replace("P0006", "P0045"))
+        (unselected / "unsupported.seed").write_bytes(b"outside the selected batch")
+        self.inventory.write_text(self.inventory.read_text() + "unselected,P0045\n")
+        self.candidate = create_snapshot(self.source, self.work, self.inventory, instruments=["P0006"])
+        self.report_path = self.work / "validation" / self.candidate.name / "validation.json"
+        report = science.ArchiveValidation.validate(self)
+        self.assertEqual(report["status"], "passed", report["failures"])
+        self.command[self.command.index("--candidate") + 1] = str(self.candidate)
+        self.command[self.command.index("--report") + 1] = str(self.report_path)
+        self.invoke()
+        manifest = json.loads(self.store.data[f"geocsv/testing/releases/{report['release_id']}/manifest.json"])
+        self.assertEqual([entry["instrument_id"] for entry in manifest["files"]], ["P0006"])
+        self.assertFalse(any("P0045" in key for key in self.store.data))
+        self.assertEqual([item["instrument_id"] for item in report["instruments"]], ["P0006"])
+        committed = git(self.archive, "ls-tree", "-r", "--name-only", "HEAD").splitlines()
+        self.assertFalse(any("P0045" in path for path in committed))
+        receipt, = (self.work / "publications").glob("*.json")
+        publisher.commit_publication(receipt)  # Network-free recovery retains the same scope.
+
     def test_commit_failure_is_a_distinct_exit_after_success(self):
         with patch.object(publisher, "commit_publication", side_effect=OSError("failed")):
             with self.assertRaises(SystemExit) as caught:

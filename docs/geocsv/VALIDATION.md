@@ -1,10 +1,13 @@
-# Full-archive GeoCSV validation and report version 3
+# GeoCSV snapshot validation and report version 3
 
 `mermaid-publisher/scripts/geocsv/validate_snapshot.py` orchestrates the public
 `mermaid-geocsv` read → associate → write_sac APIs. It requires Python 3.11+,
 `mermaid-geocsv` with its ObsPy extra, and original local MiniSEED/SAC inputs.
-The source tree is read-only. Temporary exports and frozen products remain in the external publication
-archive, separate from the software checkout. The publisher consumes this repository's report protocol.
+The source tree is read-only. Temporary exports, frozen products and reports
+may use an ordinary temporary workspace, separate from the source tree and
+software checkout. Git and persistent archival are required only for actual
+publication. Validation alone does not imply publication intent. The publisher
+consumes this repository's report protocol.
 
 ## Scope and complete accounting
 
@@ -13,6 +16,11 @@ processed-root-relative `provenance.source_path`. Every original `.mseed` and
 `.sac` underneath its serial directory is fingerprinted and paired by identical
 relative stem. Pairing does not provide association hints: the package matches
 native MiniSEED identity, start, count and rate to the frozen GeoCSV.
+
+Creation freezes all instruments by default, or an explicit `--instruments`
+selection. Validation has no independent instrument filter. A full-corpus check
+in a temporary workspace and a two-instrument publication candidate are separate
+snapshots with separate reports. Neither report can accept the other's manifest.
 
 Original products follow `.MER[digits].DET|REQ.WLT1..5|RAW`. Other waveform
 products, multitrace files, unsupported `.seed`, `.miniseed`, `.ms` and compressed
@@ -35,10 +43,14 @@ matching hints, missing positions or missing pressure.
 
 Recordless GeoCSV sources are excluded before payload staging and documented
 in the creator's local-only `staging/<encoded release>/inventory.json`. That
-sidecar covers every source instrument, including explicit exclusion reasons.
+sidecar covers every in-scope source instrument, including explicit exclusion reasons.
 The validator and publisher verify its exact hash, recordless status, and complete
 source accounting; any original waveforms in an excluded directory block the
-run rather than being silently omitted. Empty GeoCSV files and the staging
+run rather than being silently omitted. Default creation retains staging schema
+1 and complete-source accounting. Explicit selections use staging schema 2,
+whose `instrument_ids` must match exactly the instrument entries; unselected
+instruments are outside validation scope. The sidecar hash binds that frozen
+scope without changing report schema 3. Empty GeoCSV files and the staging
 sidecar are never uploaded. The public report records only the sidecar hash and
 recordless-exclusion count, not the excluded payloads.
 

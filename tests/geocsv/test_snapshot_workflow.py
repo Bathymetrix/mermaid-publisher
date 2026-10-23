@@ -37,8 +37,8 @@ class Snapshots(unittest.TestCase):
         self.inventory.write_text("instrument_serial,instrument_id\n452.020-P-06,P0006\n")
         self.workspace = self.root / "publication"
 
-    def create(self, previous=None):
-        return create_snapshot(self.source, self.workspace, self.inventory, previous)
+    def create(self, previous=None, *, instruments=None):
+        return create_snapshot(self.source, self.workspace, self.inventory, previous, instruments=instruments)
 
     def test_exact_copy_deterministic_idempotent_inventory(self):
         source = self.file.read_bytes()
@@ -128,6 +128,47 @@ class Snapshots(unittest.TestCase):
         (candidate / "P0006.geocsv").write_bytes(b"changed")
         with self.assertRaisesRegex(ValueError, "bytes changed"):
             verify_candidate(candidate)
+
+    def test_selected_snapshot_freezes_only_selected_payloads_and_scope(self):
+        self.add_instrument()
+        third = self.source / "third"
+        third.mkdir()
+        (third / "geo_DET_REQ.csv").write_bytes(geocsv("P0045"))
+        self.inventory.write_text(self.inventory.read_text() + "third,P0045\n")
+        # An unselected source is outside this validation batch, even if malformed.
+        (self.source / "second/geo_DET_REQ.csv").write_bytes(b"not GeoCSV\n")
+        candidate = self.create(instruments=["P0045", "P0006"])
+        manifest = verify_candidate(candidate)
+        self.assertEqual([entry["instrument_id"] for entry in manifest["files"]], ["P0006", "P0045"])
+        self.assertEqual({path.name for path in candidate.iterdir()},
+                         {"P0006.geocsv", "P0045.geocsv", "manifest.json", "source_provenance.json"})
+        staging = self.workspace / "staging" / candidate.name / "inventory.json"
+        value = json.loads(staging.read_bytes())
+        self.assertEqual(value["schema_version"], 2)
+        self.assertEqual(value["instrument_ids"], ["P0006", "P0045"])
+        frozen = staging.read_bytes()
+        self.assertEqual(self.create(instruments=["P0006", "P0045"]), candidate)
+        with self.assertRaisesRegex(FileExistsError, "immutable snapshot"):
+            self.create(instruments=["P0006"])
+        self.assertEqual(staging.read_bytes(), frozen)
+        self.assertEqual(len(verify_candidate(candidate)["files"]), 2)
+
+    def test_selection_requires_known_unique_ids_and_complete_source_mapping(self):
+        for selection in ([], ["P0006", "P0006"], ["P9999"], ["../P0006"]):
+            with self.subTest(selection=selection), self.assertRaises(ValueError):
+                self.create(instruments=selection)
+        self.add_instrument()
+        self.inventory.write_text("instrument_serial,instrument_id\n452.020-P-06,P0006\n")
+        with self.assertRaisesRegex(ValueError, "incomplete inventory"):
+            self.create(instruments=["P0006"])
+        self.assertFalse((self.workspace / "snapshots").exists())
+
+    def test_selection_cannot_drop_a_previously_published_instrument(self):
+        self.add_instrument()
+        previous = self.create()
+        self.workspace = self.root / "selected"
+        with self.assertRaisesRegex(ValueError, "previously published"):
+            self.create(previous / "manifest.json", instruments=["P0006"])
 
 
 class MemoryStore:

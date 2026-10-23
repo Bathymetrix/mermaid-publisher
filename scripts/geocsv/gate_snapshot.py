@@ -1,4 +1,4 @@
-"""Version 3 full-archive evidence and publication gate for MERMAID GeoCSV."""
+"""Version 3 exhaustive snapshot evidence and publication gate for MERMAID GeoCSV."""
 
 import importlib.metadata
 import math
@@ -112,12 +112,24 @@ def inventory_sources(manifest, source_root):
 
 
 def check_staging_inventory(candidate, manifest, source_root):
-    """Verify local recordless exclusions without adding them to the public inventory."""
+    """Verify frozen source scope and recordless exclusions, including explicit selections."""
     candidate, root = Path(candidate), Path(source_root).resolve(strict=True)
     path = candidate.parent.parent / "staging" / candidate.name / "inventory.json"
     sidecar = read_json(path)
-    if sidecar.get("schema_version") != 1 or sidecar.get("release_id") != manifest["release_id"]:
+    version = sidecar.get("schema_version")
+    if type(version) is not int or version not in (1, 2) or sidecar.get("release_id") != manifest["release_id"]:
         raise AcceptanceError("invalid local staging inventory")
+    selected = None
+    if version == 2:
+        selected = sidecar.get("instrument_ids")
+        if (not isinstance(selected, list) or not selected
+                or any(not isinstance(value, str) for value in selected)
+                or selected != sorted(set(selected))):
+            raise AcceptanceError("invalid frozen instrument selection")
+        for instrument in selected:
+            check_instrument(instrument)
+    elif "instrument_ids" in sidecar:
+        raise AcceptanceError("explicit instrument selection requires staging schema 2")
     entries = sidecar.get("instruments")
     if not isinstance(entries, list):
         raise AcceptanceError("missing complete local staging inventory")
@@ -149,8 +161,10 @@ def check_staging_inventory(candidate, manifest, source_root):
             excluded += 1
         else:
             raise AcceptanceError("unexplained staging exclusion")
+    if selected is not None and ids != set(selected):
+        raise AcceptanceError("local staging inventory differs from frozen instrument selection")
     actual = {file.relative_to(root).as_posix() for file in root.glob("*/geo_DET_REQ.csv")}
-    if paths != actual or included != set(published):
+    if (selected is None and paths != actual or not paths <= actual or included != set(published)):
         raise AcceptanceError("local staging inventory omits source instruments")
     return {"inventory_sha256": fingerprint(path)[1], "excluded_recordless": excluded}
 

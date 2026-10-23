@@ -102,10 +102,25 @@ digits, `.`, `_`, `-`. Filenames have the same character rule; `manifest.json` i
 reserved by the client. The creator uses a reviewed serial-to-ID mapping and
 requires all Station values to agree; it does not infer an ID from a serial.
 
+Instrument scope is frozen at creation. Without `--instruments`, every mapped
+source instrument is in scope. With `--instruments ID ...`, only those explicit
+IDs are in scope. The reviewed mapping must still account for every source
+serial. Unknown or duplicate selected IDs raise. Validation covers every
+original waveform pair for included instruments; publishing transfers the
+complete frozen candidate and cannot filter or expand it. A different selection
+requires a separate candidate and its own acceptance report.
+
 Recordless GeoCSV sources are never staged or published. The local-only staging
-inventory records all inputs and explicit recordless exclusions. Validator and
-publisher recheck those exclusions and reject any excluded original waveforms.
+inventory records all in-scope inputs and explicit recordless exclusions.
+Validator and publisher recheck those exclusions and reject any original
+waveforms in an in-scope recordless directory. Instruments outside an explicit
+selection are not validation inputs and are not copied or fingerprinted.
 The sidecar is not an R2 release object. The report binds its hash separately.
+Staging schema 1 retains complete-source accounting for default creation.
+Staging schema 2 adds a sorted, nonempty, unique `instrument_ids` array for
+explicit selections; its instrument entries must cover exactly that selection,
+including recordless exclusions. Both versions remain supported. The public
+manifest/download format and validation-report schema 3 are unchanged.
 
 The creator emits entries sorted by ID. Source provenance uses a
 processed-root-relative `source_path` (`<serial>/geo_DET_REQ.csv`) and
@@ -126,9 +141,12 @@ retain the exact manifest and literal release provenance.
 Under an existing release ID, payloads and manifests are immutable. Identical
 retries reuse them; differing bytes (including comments) or inventories raise.
 Unchanged historical records with updated comments and a new shared timestamp
-are valid. Retain prior releases. Snapshots, inventories, reports and publication receipts live in the separate
-local Git archive `$MERMAID/publisher/geocsv`, outside the protected processed
-tree and software checkout. Original waveform archives are not copied.
+are valid. Retain prior releases. Published snapshots, inventories, reports and
+publication receipts live in the separate local Git archive
+`$MERMAID/publisher/geocsv`, outside the protected processed tree and software
+checkout. Creation and validation alone may use ordinary temporary workspaces
+without Git or archival obligations. Validation does not imply publication
+intent. Original waveform archives are not copied.
 
 Latest responses and redirects bypass caches. Successful immutable objects are
 cached deliberately; misses/errors are not. Downloads honor
@@ -137,7 +155,7 @@ is outside this protocol; coordinate any change before implementation.
 
 ## Scientific publication gate
 
-Freeze the candidate, obtain its full-archive scientific acceptance report,
+Freeze the candidate, obtain its exhaustive scientific acceptance report,
 recheck the complete manifest/inventory/hashes, upload payloads before the
 manifest, verify public HTTPS bytes and explicitly pinned `geocsv.fetch`, then
 update latest last. Failures before activation leave the previous latest selected.
@@ -155,7 +173,9 @@ waveform fingerprints and pair accounting, scientific checks/limits/results,
 failures/maxima, and package/code/dependency versions. Acceptance rechecks inputs
 and complete coverage rather than trusting a success flag. See
 [the concrete report protocol](VALIDATION.md). Scientific
-acceptance requires a passing complete archive run for each candidate. The historical
+acceptance requires a passing complete run over each candidate's frozen
+instrument scope. A full-corpus report cannot accept a different selected
+candidate. The historical
 2026-10-22 version-2 run passed all 43,365 original waveform pairs and its report
 passed the publisher's acceptance gate; see
 [archive findings](ARCHIVE_FINDINGS.md).

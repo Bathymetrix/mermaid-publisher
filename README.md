@@ -36,6 +36,13 @@ standard library. Dependency versions and code hashes are recorded in reports.
 
 The three commands run directly with `.venv/bin/python scripts/geocsv/<file>`.
 Use [the workflow guide](docs/geocsv/WORKFLOW.md) for complete commands.
+
+Creation freezes all instruments by default; `--instruments P0006 P0045`
+freezes only those IDs. Validation covers every original pair for the frozen
+instruments, and publishing transfers that exact snapshot without selection.
+Create and validate can use an ordinary temporary workspace without Git or any
+publication intent. Only publishing requires the dedicated persistent archive.
+
 The canonical external archive is `$MERMAID/publisher`, a separate local Git
 repository. GeoCSV artifacts reside under `geocsv/{snapshots,staging,validation,publications}`.
 Original MiniSEED/SAC archives remain at their source; only their evidence is archived.
