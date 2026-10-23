@@ -1,0 +1,15 @@
+{
+  "release_id": "test-001",
+  "testing_only": true,
+  "files": [
+    {
+      "instrument_id": "P0006",
+      "filename": "P0006.geocsv",
+      "size_bytes": 72,
+      "sha256": "7f3b08cfd6bf62b8947a25c0fe3da43d9370670bbd07c83330b7f8ac3bbdf9c8",
+      "provenance": {
+        "fixture": "frozen download contract baseline"
+      }
+    }
+  ]
+}
