@@ -59,7 +59,7 @@ class ArchiveValidation(unittest.TestCase):
         self.inventory.write_text("instrument_serial,instrument_id\nserial,P0006\n")
         self.work = self.root / "publication"
         self.candidate = create_snapshot(self.source, self.work, self.inventory)
-        self.report_path = self.work / "validation/validation.json"
+        self.report_path = self.work / "testing/validation/validation.json"
 
     def validate(self):
         return validate_snapshot(self.candidate, self.source, self.report_path, batch_size=2)
@@ -240,14 +240,14 @@ class ArchiveValidation(unittest.TestCase):
         reference.write(str(second_sac))
         self.inventory.write_text(self.inventory.read_text() + "second,P0045\n")
         full = create_snapshot(self.source, self.root / "full-check", self.inventory)
-        full_report = self.root / "full-check/validation/full.json"
+        full_report = self.root / "full-check/testing/validation/full.json"
         report = validate_snapshot(full, self.source, full_report)
         self.assertEqual(report["summary"]["passed"], 2, report["failures"])
         require_acceptance(full, full_report, self.source)
 
         selected = create_snapshot(self.source, self.root / "selected-check", self.inventory,
                                    instruments=["P0006"])
-        selected_report = self.root / "selected-check/validation/selected.json"
+        selected_report = self.root / "selected-check/testing/validation/selected.json"
         report = validate_snapshot(selected, self.source, selected_report)
         self.assertEqual(report["summary"]["passed"], 1, report["failures"])
         self.assertEqual([item["instrument_id"] for item in report["instruments"]], ["P0006"])
@@ -277,7 +277,7 @@ class ArchiveValidation(unittest.TestCase):
         ], capture_output=True, text=True)
         self.assertEqual(created.returncode, 0, created.stderr)
         candidate = Path(created.stdout.strip())
-        report_path = workspace / "validation/check.json"
+        report_path = workspace / "testing/validation/check.json"
         checked = subprocess.run([
             sys.executable, "-B", str(scripts / "validate_snapshot.py"),
             "--candidate", str(candidate), "--source-root", str(self.source),
@@ -286,7 +286,7 @@ class ArchiveValidation(unittest.TestCase):
         self.assertEqual(checked.returncode, 0, checked.stderr)
         require_acceptance(candidate, report_path, self.source)
         self.assertFalse((workspace / ".git").exists())
-        self.assertFalse((workspace / "publications").exists())
+        self.assertFalse((workspace / "testing/publications").exists())
         self.assertFalse(any(path.suffix in {".mseed", ".sac"} for path in workspace.rglob("*")))
 
 

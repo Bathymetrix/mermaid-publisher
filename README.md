@@ -44,7 +44,8 @@ Create and validate can use an ordinary temporary workspace without Git or any
 publication intent. Only publishing requires the dedicated persistent archive.
 
 The canonical external archive is `$MERMAID/publisher`, a separate local Git
-repository. GeoCSV artifacts reside under `geocsv/{snapshots,staging,validation,publications}`.
+repository. Testing GeoCSV artifacts reside under
+`geocsv/testing/{snapshots,staging,validation,publications}`.
 Original MiniSEED/SAC archives remain at their source; only their evidence is archived.
 
 All hosted data are **testing only**. Current commands require explicit HTTPS
@@ -59,6 +60,7 @@ No credentials or private deployment configuration belong in either Git reposito
 - [Publication/download contract](docs/geocsv/CONTRACT.md)
 - [Scientific checks and report schema 3](docs/geocsv/VALIDATION.md)
 - [Historical version-2 archive findings](docs/geocsv/ARCHIVE_FINDINGS.md)
+- [Fresh schema-3 full-corpus and testing-batch findings](docs/geocsv/SCHEMA3_FINDINGS.md)
 
 ## Verification
 

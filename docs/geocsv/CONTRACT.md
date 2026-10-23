@@ -153,9 +153,9 @@ retries reuse them; differing bytes (including comments) or inventories raise.
 Unchanged historical records with updated comments and a new shared timestamp
 are valid. Retain prior releases. Published snapshots, inventories, reports and
 publication receipts live in the separate local Git archive
-`$MERMAID/publisher/geocsv`, outside the protected processed tree and software
-checkout. Creation and validation alone may use ordinary temporary workspaces
-without Git or archival obligations. Validation does not imply publication
+`$MERMAID/publisher/geocsv/testing`, outside the protected processed tree and
+software checkout. Creation and validation alone may use ordinary temporary
+workspaces without Git or archival obligations. Validation does not imply publication
 intent. Original waveform archives are not copied.
 
 Latest responses and redirects bypass caches. Successful immutable objects are
@@ -198,6 +198,14 @@ software commit, or release is authorized by this document. An authorized
 successful publication includes its scoped local archive commit.
 
 ## Local provenance and recording
+
+For `testing_only: true`, the base workspace contains a `testing/` collection
+with `snapshots/`, `staging/`, `validation/` and `publications/` subdirectories.
+The creator selects this namespace from the manifest flag; callers continue to
+supply the base workspace. Testing snapshots in the former flat layout must be
+explicitly relocated with their evidence. Candidate inspection rejects testing
+manifests outside `testing/snapshots/`. Publication recording and network-free
+receipt recovery use the same collection. No remote paths or schemas change.
 
 Each snapshot also retains local `source_provenance.json`: schema_version 1 and
 `git: null` for ordinary sources, or a Git object with the full commit hash and

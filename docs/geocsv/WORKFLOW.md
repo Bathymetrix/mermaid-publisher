@@ -11,11 +11,11 @@ flowchart TB
     upstream["automaid: scientific generation"] --> source["$MERMAID/processed — read only"]
     source --> create["mermaid-publisher/scripts/geocsv/create_snapshot.py"]
     inspect["inspect_snapshot.py — internal integrity checks"] -.-> create
-    create --> snapshot["workspace/snapshots/{ID}: frozen instrument scope"]
+    create --> snapshot["workspace/testing/snapshots/{ID}: frozen instrument scope"]
     snapshot --> validate["validate_snapshot.py"]
     source --> validate
     api["mermaid-geocsv: read → associate → write_sac"] -.-> validate
-    validate --> report["validation/{ID}/report.json"]
+    validate --> report["testing/validation/{ID}/report.json"]
     report --> gate["gate_snapshot.py — current evidence"]
     snapshot --> gate
     source --> gate
@@ -23,7 +23,7 @@ flowchart TB
     publish --> objects["Explicit testing destination: payloads → manifest → report"]
     objects --> checks["Exact HTTPS bytes and pinned fetch"]
     checks --> latest["Conditional latest update, confirmed last"]
-    latest --> receipt["publications/ — receipt and scoped local Git commit"]
+    latest --> receipt["testing/publications/ — receipt and scoped local Git commit"]
     objects -.-> host["bathymetrix-site: read-only R2 Worker"]
 ```
 
@@ -45,10 +45,11 @@ directory in a dedicated persistent Git archive. The canonical archive is
 
 ```text
 geocsv/
-  snapshots/{encoded ID}/       GeoCSV, manifest.json, source_provenance.json
-  staging/{encoded ID}/         inventory.json, including recordless exclusions
-  validation/{encoded ID}/      exclusive, distinct report attempts
-  publications/                successful-publication receipts
+  testing/
+    snapshots/{encoded ID}/     GeoCSV, manifest.json, source_provenance.json
+    staging/{encoded ID}/       inventory.json, including recordless exclusions
+    validation/{encoded ID}/    exclusive, distinct report attempts
+    publications/              successful-publication receipts
 ```
 
 Retain production products and evidence indefinitely. Initial workflow-testing
@@ -66,10 +67,19 @@ failed evidence remain distinguishable from successful publication receipts;
 no automatic cleanup is implemented.
 
 Remote testing URLs use `/geocsv/testing/` and R2 keys use `geocsv/testing/`.
-The local layout above does not contain a `testing/` directory: testing status
-is recorded in each frozen manifest and selection in its staging inventory.
-The current archive contains only initial testing artifacts. Retirement is an
-operator procedure; there is no deletion command in the publisher.
+The creator derives the local `testing/` namespace from the manifest’s
+`testing_only: true` flag. `--workspace` remains the base directory (`geocsv/`
+for the archive); do not append `testing/` to that argument. Staging, validation,
+publication receipts and the publication lock share the testing collection.
+Production manifests remain unsupported. Retirement is an operator procedure;
+there is no deletion command in the publisher.
+
+The previous flat local layout requires an explicit move of each testing
+snapshot and its staging/validation evidence into `testing/`. Frozen files must
+remain byte-identical; old paths are rejected. Layout changes do not alter public
+URLs, object keys, manifest/report schemas or scientific limits. Reports bind
+publisher code, so retain old reports and produce fresh evidence after code
+changes. No automatic migration or publication occurs.
 
 Source provenance is local, immutable and bound by report SHA-256. It is not in
 the public manifest's GeoCSV files list and is not uploaded. An identical retry
@@ -92,8 +102,8 @@ GEOCSV_CHECK_WORKSPACE="$(mktemp -d)"
 
 Use the candidate path printed by creation with `validate_snapshot.py` and put
 `--report` outside the frozen candidate, for example under
-`$GEOCSV_CHECK_WORKSPACE/validation/`. Omit `--instruments` for the full corpus;
-add `--instruments P0006 P0045` to check only that batch. No Git initialization,
+`$GEOCSV_CHECK_WORKSPACE/testing/validation/`. Omit `--instruments` for the full
+corpus; add `--instruments P0006 P0045` to check only that batch. No Git initialization,
 archive copying or publication is required. Disposable check products may be
 removed when no longer needed; published artifacts retain their archival policy.
 
@@ -125,7 +135,7 @@ fresh report even after a separate full-corpus check passes. The archive retains
 only that candidate's payloads and evidence. Unselected payloads and original
 waveform archives are not copied into it.
 
-Within one workspace or hosted collection, a timestamp identifies exactly one
+Within one local or hosted collection, a timestamp identifies exactly one
 immutable inventory. Changing selection under an existing timestamp raises;
 use separate local workspaces for different check batches. Expanding an already
 hosted inventory requires a new upstream timestamp, not an edited manifest.
@@ -133,8 +143,8 @@ hosted inventory requires a new upstream timestamp, not an edited manifest.
 Using the candidate ID printed by creation, set a task-specific shell variable:
 
 ```bash
-GEOCSV_CANDIDATE="$MERMAID/publisher/geocsv/snapshots/2026-10-21T22%3A48%3A33.277Z"
-GEOCSV_REPORT="$MERMAID/publisher/geocsv/validation/2026-10-21T22%3A48%3A33.277Z/validation-v3.json"
+GEOCSV_CANDIDATE="$MERMAID/publisher/geocsv/testing/snapshots/2026-10-21T22%3A48%3A33.277Z"
+GEOCSV_REPORT="$MERMAID/publisher/geocsv/testing/validation/2026-10-21T22%3A48%3A33.277Z/validation-v3.json"
 .venv/bin/python scripts/geocsv/validate_snapshot.py \
   --candidate "$GEOCSV_CANDIDATE" --source-root "$MERMAID/processed" \
   --report "$GEOCSV_REPORT"
@@ -183,7 +193,7 @@ receipt supports network-free recovery:
 
 ```bash
 .venv/bin/python scripts/geocsv/publish_snapshot.py \
-  --record-only "$MERMAID/publisher/geocsv/publications/RECEIPT.json"
+  --record-only "$MERMAID/publisher/geocsv/testing/publications/RECEIPT.json"
 ```
 
 Recovery checks archived artifact hashes and commits the existing event; it does

@@ -3,7 +3,8 @@
 Release ID: `2026-10-21T22:48:33.277Z`.
 
 Two separate frozen snapshots were created and validated with publisher 0.1.0.
-Both fresh schema-3 reports passed the current scientific acceptance gate.
+Independent schema-3 reports passed the scientific acceptance gate. Current
+acceptance is refreshed after local layout changes as recorded below.
 The full-corpus check uses an ordinary temporary workspace. The publication
 archive contains only the independently accepted P0006/P0045 candidate.
 No data were uploaded and no latest pointer or publication receipt was created.
@@ -54,7 +55,7 @@ interval difference was 7.450580596923828e-9 seconds. Native first-sample times
 matched exactly; independent-reference differences were at most 1,000 ns.
 These are the unchanged [versioned comparison rules](VALIDATION.md).
 
-## Separate immutable evidence
+## Initial immutable evidence before the local layout change
 
 | Scope | Manifest SHA-256 | Report SHA-256 |
 | --- | --- | --- |
@@ -62,9 +63,9 @@ These are the unchanged [versioned comparison rules](VALIDATION.md).
 | P0006/P0045 | `dd1eb6c41196c46458d0fc259a1d8fb1bd091ece29ba94253888784f0c27736b` | `4efa2caf0ec0210db79cc71a63c24c82caa1bd247260e95c0a3b1cbfe7c616d9` |
 
 The full report completed at `2026-10-23T22:57:36.276296Z`; the selected report
-completed at `2026-10-23T22:55:00.712181Z`. Both use `validation-v3.json` under
-`validation/2026-10-21T22%3A48%3A33.277Z/`, outside their frozen candidate
-directories.
+completed at `2026-10-23T22:55:00.712181Z`. Both use `validation-v3.json`, now
+retained under `testing/validation/2026-10-21T22%3A48%3A33.277Z/`, outside
+their frozen candidate directories.
 Each report binds its own exact manifest, source provenance, staging inventory,
 input fingerprints, pair coverage, scientific results and software fingerprints.
 Neither report accepts the other snapshot. Both manifests retain
@@ -73,10 +74,49 @@ Neither report accepts the other snapshot. Both manifests retain
 The full snapshot, report and run log remain in their temporary workspace,
 with no archival obligation or publication intent. The P0006/P0045 snapshot,
 staging inventory, report, run log and read-only acceptance plan remain under
-`$MERMAID/publisher/geocsv/`. Its frozen staging schema 2 explicitly contains
+`$MERMAID/publisher/geocsv/testing/`. Its frozen staging schema 2 explicitly contains
 only P0006 and P0045. There are no publication receipts or archive commits yet.
 
 The read-only `publish_snapshot.py --plan` gate passed for each snapshot and
 reported `gate passed; no publication performed`. These checks performed no
 network transfer or Git recording. Acceptance must be rechecked against the
 current source and code before a separately authorized upload.
+
+## Acceptance after the local testing layout change
+
+The local testing snapshots, staging inventories and validation directories were
+explicitly moved into each base workspace's `testing/` collection. Every moved
+file's SHA-256 was checked before and after the move. Frozen manifests, payloads,
+source provenance, staging inventories and earlier reports are byte-identical.
+The previous flat snapshot/staging/validation directories are absent. No source
+or remote data changed, and no archive Git history was changed.
+
+The updated creator selects this collection from `testing_only: true`, while
+`--workspace` continues to name the base workspace. An identical creator retry
+resolved the archived candidate under `geocsv/testing/snapshots/` without
+changing its frozen files. Read-only archive preflight accepted the new
+collection location and existing exact-byte Git attributes.
+
+Publisher code fingerprints changed, so earlier reports remain historical
+evidence rather than current acceptance. Fresh exhaustive reports use
+`validation-v3-testing-layout.json`; both passed the current publication gate
+through `--plan`. The source inventories, candidate bindings, staging hashes,
+pair counts, scientific limits and measured maxima match the earlier reports.
+Consumer source fingerprints are unchanged.
+
+| Scope | Pairs passed | Completed UTC | Current report SHA-256 |
+| --- | ---: | --- | --- |
+| Full corpus | 43,365 | `2026-10-23T23:22:09.604518Z` | `489fac9069a5e88eee124c5c00ffbd09a959a776dabdd6457dacb6b894683166` |
+| P0006/P0045 | 3,292 | `2026-10-23T23:20:12.586929Z` | `b55b28bfd6a040be486f3cd4baa658eae8d1cf38b01e17ed40534e548ed549e8` |
+
+Both current reports have zero failed, missing, unsupported or unexamined pairs.
+Their read-only gate outputs are retained as `acceptance-plan-testing-layout.json`
+beside the reports. The full corpus remains in an ordinary temporary workspace;
+only P0006/P0045 is in `$MERMAID/publisher/geocsv/testing/`. Production manifests
+remain rejected. No data were uploaded, no pointer or receipt was written, and
+no archive commit was created. Verification used the real-source
+create/validate/gate workflow, Python syntax checks and documentation checks.
+Subsequent focused verification passed all 55 publisher tests with the exact
+consumer baseline, 11 Worker serving tests and 70 package fetch/tutorial tests.
+The publisher tests exercise fixture-only local Git recording and recovery in
+the new testing namespace; no live storage writes were performed.

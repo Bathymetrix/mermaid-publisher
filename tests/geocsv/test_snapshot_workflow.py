@@ -43,7 +43,7 @@ class Snapshots(unittest.TestCase):
     def test_exact_copy_deterministic_idempotent_inventory(self):
         source = self.file.read_bytes()
         result = self.create()
-        self.assertEqual(result.name, "2026-10-21T22%3A48%3A33.277000001Z")
+        self.assertEqual(result.relative_to(self.workspace.resolve()), Path("testing/snapshots/2026-10-21T22%3A48%3A33.277000001Z"))
         self.assertEqual((result / "P0006.geocsv").read_bytes(), source)
         self.assertEqual(self.file.read_bytes(), source)
         manifest = (result / "manifest.json").read_bytes()
@@ -142,7 +142,7 @@ class Snapshots(unittest.TestCase):
         self.assertEqual([entry["instrument_id"] for entry in manifest["files"]], ["P0006", "P0045"])
         self.assertEqual({path.name for path in candidate.iterdir()},
                          {"P0006.geocsv", "P0045.geocsv", "manifest.json", "source_provenance.json"})
-        staging = self.workspace / "staging" / candidate.name / "inventory.json"
+        staging = self.workspace / "testing/staging" / candidate.name / "inventory.json"
         value = json.loads(staging.read_bytes())
         self.assertEqual(value["schema_version"], 2)
         self.assertEqual(value["instrument_ids"], ["P0006", "P0045"])
@@ -161,7 +161,7 @@ class Snapshots(unittest.TestCase):
         self.inventory.write_text("instrument_serial,instrument_id\n452.020-P-06,P0006\n")
         with self.assertRaisesRegex(ValueError, "incomplete inventory"):
             self.create(instruments=["P0006"])
-        self.assertFalse((self.workspace / "snapshots").exists())
+        self.assertFalse((self.workspace / "testing/snapshots").exists())
 
     def test_selection_cannot_drop_a_previously_published_instrument(self):
         self.add_instrument()

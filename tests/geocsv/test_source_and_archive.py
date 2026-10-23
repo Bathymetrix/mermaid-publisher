@@ -62,7 +62,7 @@ class SourceProvenance(unittest.TestCase):
         (self.source / "untracked.txt").write_text("uncommitted")
         with self.assertRaisesRegex(ValueError, "clean"):
             self.create()
-        self.assertFalse((self.workspace / "snapshots").exists())
+        self.assertFalse((self.workspace / "testing/snapshots").exists())
 
     def test_source_revision_change_during_staging_stops_freeze(self):
         self.track_source()
@@ -72,7 +72,7 @@ class SourceProvenance(unittest.TestCase):
         changed["git"]["commit"] = "f" * 40
         with patch.object(creator, "source_provenance", side_effect=[first, changed]), self.assertRaisesRegex(ValueError, "changed during staging"):
             self.create()
-        self.assertFalse(list((self.workspace / "snapshots").glob("20*")))
+        self.assertFalse(list((self.workspace / "testing/snapshots").glob("20*")))
 
     def test_linked_git_worktree_and_nested_source_are_supported(self):
         self.track_source()
@@ -94,7 +94,7 @@ class PublicationRecording(unittest.TestCase):
         initialize(self.archive)
         self.workspace = self.archive / "geocsv"
         self.candidate = workflow.Snapshots.create(self)
-        self.report = self.workspace / "validation" / self.candidate.name / "validation.json"
+        self.report = self.workspace / "testing/validation" / self.candidate.name / "validation.json"
         self.report.parent.mkdir(parents=True)
         self.report.write_bytes(b'{"synthetic_transport_test": true}\n')
         self.url = "https://example.test/geocsv/testing/"
@@ -122,7 +122,7 @@ class PublicationRecording(unittest.TestCase):
         with patch.object(publisher, "commit_publication", side_effect=OSError("commit failed")):
             with self.assertRaisesRegex(publisher.PublicationRecordingError, "published; local recording incomplete"):
                 self.record()
-        receipt, = (self.workspace / "publications").glob("*.json")
+        receipt, = (self.workspace / "testing/publications").glob("*.json")
         publisher.commit_publication(receipt)
         self.assertTrue(git(self.archive, "rev-parse", "HEAD"))
         command = [sys.executable, "-B", str(Path(publisher.__file__)), "--record-only", str(receipt)]
@@ -146,7 +146,7 @@ class PublicationRecording(unittest.TestCase):
         self.file.write_bytes(workflow.geocsv(created="2026-10-22T22:48:33.277Z").replace(b"\n", b"\r\n"))
         from create_snapshot import create_snapshot
         self.candidate = create_snapshot(self.source, self.workspace, self.inventory)
-        self.report = self.workspace / "validation" / self.candidate.name / "validation.json"
+        self.report = self.workspace / "testing/validation" / self.candidate.name / "validation.json"
         self.report.parent.mkdir(parents=True)
         self.report.write_bytes(b'{"synthetic_transport_test": true}\r\n')
         self.record()
@@ -179,7 +179,7 @@ class PublicationCommand(unittest.TestCase):
         self.work = self.archive / "geocsv"
         from create_snapshot import create_snapshot
         self.candidate = create_snapshot(self.source, self.work, self.inventory)
-        self.report_path = self.work / "validation" / self.candidate.name / "validation.json"
+        self.report_path = self.work / "testing/validation" / self.candidate.name / "validation.json"
         science.ArchiveValidation.validate(self)
         self.store = workflow.MemoryStore()
         self.command = ["publish_snapshot.py", "--candidate", str(self.candidate), "--report", str(self.report_path),
@@ -199,7 +199,7 @@ class PublicationCommand(unittest.TestCase):
         self.assertTrue(git(self.archive, "rev-parse", "HEAD"))
         self.assertEqual(self.store.writes[-1], "geocsv/testing/latest.json")
         self.assertFalse(any("source_provenance.json" in key for key in self.store.data))
-        self.assertEqual(len(list((self.work / "publications").glob("*.json"))), 1)
+        self.assertEqual(len(list((self.work / "testing/publications").glob("*.json"))), 1)
         head = git(self.archive, "rev-parse", "HEAD")
         self.invoke()
         self.assertEqual(git(self.archive, "rev-parse", "HEAD"), head)
@@ -220,7 +220,7 @@ class PublicationCommand(unittest.TestCase):
         (unselected / "unsupported.seed").write_bytes(b"outside the selected batch")
         self.inventory.write_text(self.inventory.read_text() + "unselected,P0045\n")
         self.candidate = create_snapshot(self.source, self.work, self.inventory, instruments=["P0006"])
-        self.report_path = self.work / "validation" / self.candidate.name / "validation.json"
+        self.report_path = self.work / "testing/validation" / self.candidate.name / "validation.json"
         report = science.ArchiveValidation.validate(self)
         self.assertEqual(report["status"], "passed", report["failures"])
         self.command[self.command.index("--candidate") + 1] = str(self.candidate)
@@ -232,7 +232,7 @@ class PublicationCommand(unittest.TestCase):
         self.assertEqual([item["instrument_id"] for item in report["instruments"]], ["P0006"])
         committed = git(self.archive, "ls-tree", "-r", "--name-only", "HEAD").splitlines()
         self.assertFalse(any("P0045" in path for path in committed))
-        receipt, = (self.work / "publications").glob("*.json")
+        receipt, = (self.work / "testing/publications").glob("*.json")
         publisher.commit_publication(receipt)  # Network-free recovery retains the same scope.
 
     def test_commit_failure_is_a_distinct_exit_after_success(self):
@@ -241,7 +241,7 @@ class PublicationCommand(unittest.TestCase):
                 self.invoke()
         self.assertEqual(caught.exception.code, 2)
         self.assertIn("geocsv/testing/latest.json", self.store.data)
-        receipt, = (self.work / "publications").glob("*.json")
+        receipt, = (self.work / "testing/publications").glob("*.json")
         publisher.commit_publication(receipt)
 
     def test_final_public_http_failure_reports_unknown_outcome(self):
@@ -257,4 +257,4 @@ class PublicationCommand(unittest.TestCase):
                 publisher.main()
         self.assertEqual(caught.exception.code, 2)
         self.assertIn("geocsv/testing/latest.json", self.store.data)
-        self.assertFalse((self.work / "publications").exists())
+        self.assertFalse((self.work / "testing/publications").exists())

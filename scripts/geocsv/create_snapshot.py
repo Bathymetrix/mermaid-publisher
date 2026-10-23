@@ -61,9 +61,8 @@ def create_snapshot(source_root, workspace, inventory_path, previous_manifest=No
         missing_ids = {entry["instrument_id"] for entry in previous} - set(mapping.values())
         if missing_ids:
             raise ValueError(f"previously published instruments missing: {sorted(missing_ids)}")
-    snapshots = workspace / "snapshots"
-    snapshots.mkdir(parents=True, exist_ok=True)
-    with tempfile.TemporaryDirectory(prefix=".candidate-", dir=snapshots) as temporary:
+    workspace.mkdir(parents=True, exist_ok=True)
+    with tempfile.TemporaryDirectory(prefix=".candidate-", dir=workspace) as temporary:
         candidate = Path(temporary)
         entries = []
         inputs = []
@@ -114,6 +113,9 @@ def create_snapshot(source_root, workspace, inventory_path, previous_manifest=No
         manifest = {"release_id": release, "testing_only": True, "files": entries}
         payload = json_bytes(manifest)
         (candidate / "manifest.json").write_bytes(payload)
+        collection = workspace / "testing" if manifest["testing_only"] else workspace
+        snapshots = collection / "snapshots"
+        snapshots.mkdir(parents=True, exist_ok=True)
         destination = snapshots / release_component(release)
         if destination.exists():
             verify_candidate(destination)
@@ -121,13 +123,13 @@ def create_snapshot(source_root, workspace, inventory_path, previous_manifest=No
                 raise FileExistsError(f"conflicting immutable snapshot: {destination}")
             if (destination / "source_provenance.json").read_bytes() != provenance_payload:
                 raise FileExistsError(f"conflicting immutable source provenance: {destination}")
-            write_staging_inventory(workspace, manifest, inputs, selected)
+            write_staging_inventory(collection, manifest, inputs, selected)
             return destination
         # Rename the whole candidate only when complete. No partial frozen release.
         # A concurrent creator cannot replace an existing nonempty directory.
         os.rename(candidate, destination)
     verify_candidate(destination)
-    write_staging_inventory(workspace, manifest, inputs, selected)
+    write_staging_inventory(collection, manifest, inputs, selected)
     return destination
 
 
@@ -150,7 +152,8 @@ def write_staging_inventory(workspace, manifest, inputs, selected=None):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--source-root", required=True, type=Path)
-    parser.add_argument("--workspace", required=True, type=Path)
+    parser.add_argument("--workspace", required=True, type=Path,
+                        help="base workspace; testing_only snapshots are created under its testing/ subdirectory")
     parser.add_argument("--inventory", required=True, type=Path,
                         help="reviewed CSV mapping: instrument_serial,instrument_id")
     parser.add_argument("--instruments", nargs="+", metavar="ID",
@@ -162,7 +165,7 @@ def main():
         candidate = create_snapshot(args.source_root, args.workspace, args.inventory, args.previous_manifest,
                                     instruments=args.instruments)
         print(candidate)
-        sidecar = args.workspace.resolve() / "staging" / candidate.name / "inventory.json"
+        sidecar = candidate.parent.parent / "staging" / candidate.name / "inventory.json"
         excluded = [item["instrument_id"] for item in read_json(sidecar)["instruments"] if item["status"] == "excluded_recordless"]
         if excluded:
             print(f"Not staged (no data records): {', '.join(excluded)}; local accounting: {sidecar}")

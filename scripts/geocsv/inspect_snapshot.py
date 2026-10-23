@@ -128,6 +128,8 @@ def verify_candidate(directory):
         raise ValueError("candidate manifest cannot be a symlink")
     manifest = read_json(manifest_path)
     entries = check_manifest(manifest)
+    if manifest["testing_only"] and (directory.parent.name != "snapshots" or directory.parent.parent.name != "testing"):
+        raise ValueError("testing snapshot must be under <workspace>/testing/snapshots/<snapshot ID>/")
     if directory.name != release_component(manifest["release_id"]):
         raise ValueError("candidate directory must use the encoded release component")
     expected = {"manifest.json", "source_provenance.json", *(entry["filename"] for entry in entries)}

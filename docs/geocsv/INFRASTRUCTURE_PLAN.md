@@ -47,8 +47,8 @@ authorized. Production retention remains indefinite.
   `10.7914/SN/MH` for citation.
 - [x] Establish the approved testing scope: P0006 and P0045 only. Broader
   distribution and full-corpus licensing remain deferred.
-- [x] Prepare the testing-only scope and MH network DOI in the landing-page
-  source. No general data license is inferred from the software license or the
+- [x] Prepare the testing-only scope, MH network DOI and retirement notice in
+  the landing-page source. No general data license is inferred from the software license or the
   limited testing authorization.
 - [ ] Ship and verify that landing-page description before data uploads.
 
@@ -82,6 +82,9 @@ authorized. Production retention remains indefinite.
   local staging schema 2; report schema 3 and the download format are unchanged.
 - [x] Verify create and validate in an ordinary temporary workspace without
   Git, archival, uploads or publication intent.
+- [x] Isolate local testing payloads and evidence under `geocsv/testing/`,
+  derive the namespace from the manifest flag and preserve frozen bytes during
+  the explicit migration from the flat layout.
 - [x] Reconstruct and review the complete 112-entry serial-to-ID mapping using
   explicit Station records and the nine documented recordless IDs; retain it
   outside both repositories.
@@ -89,7 +92,7 @@ authorized. Production retention remains indefinite.
   reviewed complete source mapping. Retain the result locally for inspection;
   this check does not populate the publication archive.
 - [x] Create the separate P0006/P0045 candidate from the read-only canonical
-  `$MERMAID/processed` source in `$MERMAID/publisher/geocsv/snapshots/`.
+  `$MERMAID/processed` source in `$MERMAID/publisher/geocsv/testing/snapshots/`.
 - [x] Produce a fresh schema-3 exhaustive report for that exact two-instrument
   candidate using the pinned `mermaid-geocsv` 0.24.0 consumer baseline.
 - [x] Require the publication gate to accept the candidate, source provenance,
@@ -137,6 +140,13 @@ the current read-only publication gate. Their manifests and reports are
 distinct. No original waveform archives, full-corpus payloads or full-corpus
 reports were copied into the publication archive. No uploads or archive
 commits were performed. See [fresh schema-3 findings](SCHEMA3_FINDINGS.md).
+
+The local layout now derives a `testing/` collection from the manifest flag.
+Existing testing artifacts were explicitly moved without byte changes. Reports
+were refreshed as `validation-v3-testing-layout.json` because publisher code
+fingerprints changed. The full 43,365-pair and selected 3,292-pair runs and their
+read-only acceptance gates passed again. The selected snapshot and its evidence
+are under `$MERMAID/publisher/geocsv/testing/`; the full check remains temporary.
 
 The approved Worker deployment completed on 2026-10-23. The private bucket
 binding and `bathymetrix.com/geocsv/*` route are active. Live GET/HEAD checks

@@ -206,9 +206,10 @@ def check_destination(base_url, object_prefix):
 
 
 def archive_repository(workspace):
+    workspace = Path(workspace).resolve()
     repository = git_repository(workspace)
-    if repository is None or repository != Path(workspace).resolve().parent or Path(workspace).name != "geocsv":
-        raise ValueError("publication requires <dedicated Git archive>/geocsv as workspace")
+    if repository is None or workspace != repository / "geocsv" / "testing":
+        raise ValueError("publication requires <dedicated Git archive>/geocsv/testing as collection workspace")
     if (repository / "scripts").exists() or (repository / "pyproject.toml").exists():
         raise ValueError("publication archive must be separate from software")
     attributes = repository / ".gitattributes"
@@ -226,7 +227,7 @@ def commit_publication(receipt_path):
     workspace = receipt_path.parent.parent
     repository = archive_repository(workspace)
     if receipt_path.parent.name != "publications":
-        raise ValueError("receipt must be in <archive>/geocsv/publications")
+        raise ValueError("receipt must be in <archive>/geocsv/testing/publications")
     receipt = read_json(receipt_path)
     if receipt.get("schema_version") != 1 or receipt.get("testing_only") is not True:
         raise ValueError("unsupported publication receipt")
@@ -322,7 +323,7 @@ def main():
         workspace = candidate.parent.parent
         require_external_workspace(workspace, args.source_root or Path(__file__).resolve().parents[2])
         if candidate.parent.name != "snapshots":
-            raise ValueError("candidate must be under <workspace>/snapshots/")
+            raise ValueError("candidate must be under <workspace>/testing/snapshots/")
         if args.plan:
             if bool(args.report) != bool(args.source_root):
                 raise ValueError("supply both --report and --source-root for the scientific gate")
