@@ -1,6 +1,8 @@
 # mermaid-publisher
 
-Follow `~/.codex/AGENTS.md`, `~/programs/AGENTS.md`, and `$MERMAID/AGENTS.md`.
+Read and follow `~/.codex/AGENTS.md`, `~/programs/AGENTS.md`, and
+`$MERMAID/AGENTS.md` before working in this repository. These instructions
+supplement the guidance in those files.
 
 This repository owns maintainer publication workflows. GeoCSV is the only
 implemented data type. Keep its code, tests and documentation under their
@@ -50,3 +52,7 @@ this software repository unless explicitly asked.
 Use this repository's `.venv` when present. Run the focused unittest suite and
 consumer compatibility checks. Tests must not access real sources, upload data,
 or modify non-fixture Git history. Update relevant docs with behavior changes.
+
+After completing and verifying a coherent repository change, suggest a Git
+commit message in the final handoff using `<subsystem>: <imperative summary>`.
+Do not commit unless explicitly asked.
