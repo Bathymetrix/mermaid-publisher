@@ -21,6 +21,15 @@ either requires an explicit compatibility review. Repository version authority
 is `VERSION`; report schema versions are independent. No release tags or remote
 publication are implied by a version change.
 
+Keep relevant documentation in `../mermaid-geocsv` and `../bathymetrix-site`
+in lockstep with this repository and each other. Review and update affected
+ownership, workflow, local paths, testing/retention policies, deployment status
+and checklists in the same task, following each repository's instructions.
+Flag contract conflicts explicitly, identifying the conflicting files, claims
+and responsible owner before proceeding with dependent implementation or
+publication. Do not silently reconcile conflicts by changing public APIs,
+download semantics, scientific rules, the consumer baseline or fixed fixtures.
+
 There are three commands: create, validate and publish. `inspect_snapshot.py`
 and `gate_snapshot.py` are internal modules. Preserve scientific comparison
 rules and exact-byte immutability. Keep manifest/download changes distinct from
