@@ -1,5 +1,8 @@
 # Full archive validation findings — 2026-10-22
 
+These are historical schema-2 findings. Fresh publisher schema-3 results are
+recorded separately in [the 2026-10-23 findings](SCHEMA3_FINDINGS.md).
+
 Release ID: `2026-10-21T22:48:33.277Z`.
 
 The complete available original MiniSEED/SAC archive was tested with strict
@@ -30,8 +33,9 @@ those excluded directories. `.mhpsd` spectra are outside scope and were not coun
 
 These findings describe the pre-migration website workflow at commit `698bc38`.
 They are historical, not acceptance for publisher 0.1.0 or report schema 3.
-The original candidate and reports remain unchanged in their existing external
-workspace; migration does not copy, relabel or reaccept them.
+The original candidate and reports were created in a temporary external
+workspace. That workspace was absent during inspection on 2026-10-23; no
+historical report was copied, relabeled or reused for schema-3 acceptance.
 
 ## Observations
 
@@ -114,9 +118,9 @@ with TemporaryDirectory() as temporary:
 
 Set temporary exports to an external workspace when running from a checkout.
 Frozen candidate, full per-pair report, input fingerprints, exclusion sidecar and
-run logs remain in the external publication workspace. The exploratory
-exact-reference reports are retained separately as historical diagnostics.
-The passing report is `validation-v2.json`, completed at
+run logs were retained in the original temporary workspace during this run.
+Exploratory exact-reference reports were separate historical diagnostics.
+The passing report was `validation-v2.json`, completed at
 `2026-10-22T21:34:45.455696Z`. Publication acceptance rechecked the complete
 candidate, source inventory, local exclusion sidecar and current code/dependencies
 against that report. All scientific checks and coverage requirements passed.

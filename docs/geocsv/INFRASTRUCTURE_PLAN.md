@@ -76,14 +76,17 @@ selection at publishing. Validation alone creates no archival obligation.
   local staging schema 2; report schema 3 and the download format are unchanged.
 - [x] Verify create and validate in an ordinary temporary workspace without
   Git, archival, uploads or publication intent.
-- [ ] Run fresh full-corpus validation in a temporary workspace with the
+- [x] Reconstruct and review the complete 112-entry serial-to-ID mapping using
+  explicit Station records and the nine documented recordless IDs; retain it
+  outside both repositories.
+- [x] Run fresh full-corpus validation in a temporary workspace with the
   reviewed complete source mapping. Retain the result locally for inspection;
   this check does not populate the publication archive.
-- [ ] Create the separate P0006/P0045 candidate from the read-only canonical
+- [x] Create the separate P0006/P0045 candidate from the read-only canonical
   `$MERMAID/processed` source in `$MERMAID/publisher/geocsv/snapshots/`.
-- [ ] Produce a fresh schema-3 exhaustive report for that exact two-instrument
+- [x] Produce a fresh schema-3 exhaustive report for that exact two-instrument
   candidate using the pinned `mermaid-geocsv` 0.24.0 consumer baseline.
-- [ ] Require the publication gate to accept the candidate, source provenance,
+- [x] Require the publication gate to accept the candidate, source provenance,
   complete inventory, pair coverage and report. Historical schema-2 acceptance
   for 43,365 pairs cannot satisfy this step.
 
@@ -118,6 +121,16 @@ explicit authorization before execution.
   validation is enabled.
 
 ## Current execution notes
+
+Fresh schema-3 validation and acceptance completed on 2026-10-23. The full
+temporary snapshot passed all 43,365 original waveform pairs across 103
+payloads; nine recordless sources were explicitly excluded. The separate
+archived P0006/P0045 candidate passed all 3,292 original pairs. Both reports
+have zero failed, missing, unsupported or unexamined pairs, and both passed
+the current read-only publication gate. Their manifests and reports are
+distinct. No original waveform archives, full-corpus payloads or full-corpus
+reports were copied into the publication archive. No uploads or archive
+commits were performed. See [fresh schema-3 findings](SCHEMA3_FINDINGS.md).
 
 The approved Worker deployment completed on 2026-10-23. The private bucket
 binding and `bathymetrix.com/geocsv/*` route are active. Live GET/HEAD checks
@@ -161,7 +174,8 @@ The selection/workspace implementation passed 55 offline publisher
 tests with the fixed consumer baseline, including memory/disk downloads,
 independent full/selected acceptance and scoped fixture-archive recording. Real
 source inspection confirmed a clean Git source with 112 GeoCSV source
-directories; no new corpus validation or publication candidate has been created.
+directories. At that preparation stage, no new corpus validation or publication
+candidate had been created.
 
 The public GeoCSV landing page returned the expected page and states that
 hosted data are testing only and production downloads are unavailable.
