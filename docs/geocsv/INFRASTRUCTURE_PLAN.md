@@ -28,7 +28,8 @@ selection at publishing. Validation alone creates no archival obligation.
 - [x] Confirm the private testing bucket is empty through the S3 API and its
   testing latest pointer is absent.
 - [x] Confirm the intended Worker does not yet exist in the dashboard.
-- [ ] Review existing zone Worker routes before the proposed deployment.
+- [x] Confirm the planned route does not replace another Worker's assignment.
+  Wrangler's route-conflict check passed during the approved deployment.
 - [x] Retain raw DNS and R2 check evidence in the approved private operational
   location outside both repositories.
 
@@ -63,8 +64,10 @@ selection at publishing. Validation alone creates no archival obligation.
   pass, including the testing header on convenience redirects.
 - [x] Verify the separate scoped Wrangler login and intended account, then pin
   private deployment configuration to the account used by the tested R2 endpoint.
-- [ ] Review the concrete deployment change and recovery procedure before
-  deployment. Deployment remains unauthorized until explicitly approved.
+- [x] Review the concrete deployment change and recovery procedure, and obtain
+  explicit authorization for Worker deployment and read-only verification.
+  A Worker fault can be isolated by removing its route, restoring the existing
+  GitHub Pages origin path. No recovery change was needed.
 
 ## 4. Prepare and accept the exact candidate
 
@@ -89,7 +92,10 @@ selection at publishing. Validation alone creates no archival obligation.
 Deployment and data upload are separate externally visible actions and require
 explicit authorization before execution.
 
-- [ ] Deploy the private R2 binding and read-only Worker on the approved route.
+- [x] Deploy the private R2 binding and read-only Worker on the approved route.
+- [x] Verify landing-page pass-through, GET/HEAD pointer misses, immutable-path
+  misses, no-store error responses and the www-to-apex redirect. Confirm the
+  bucket remains empty and both testing and production pointers are absent.
 - [ ] Verify conditional immutable writes and conflict handling with isolated
   testing objects.
 - [ ] Verify exact HTTPS bytes, identity encoding, cache behavior, uncached
@@ -113,20 +119,42 @@ explicit authorization before execution.
 
 ## Current execution notes
 
+The approved Worker deployment completed on 2026-10-23. The private bucket
+binding and `bathymetrix.com/geocsv/*` route are active. Live GET/HEAD checks
+returned the expected uncached 404 responses for absent testing and production
+pointers and absent immutable objects, with no content encoding. Landing-page
+bytes on apex/www match the pre-deployment baseline; `/geocsv/index.html` also
+returns the same page. The bucket remains empty and both pointers are absent.
+No objects were uploaded, no latest pointer was written, and no DNS settings
+were changed. Successful-object labels, exact payload bytes, immutable caching,
+conditional writes and complete client downloads remain unverified.
+
+Wrangler skipped automatic R2 resource provisioning because the scoped login
+cannot inspect bucket management state. Deployment succeeded against the
+existing bucket; live pointer/object misses and separate SDK reads confirmed
+storage access without widening permissions. An additional homepage probe with
+Python's default user agent received the existing Cloudflare bot-filter 403;
+the homepage returned 200 with a browser user agent. Normal Python requests
+under `/geocsv/` passed. Raw deployment and verification evidence remains in the
+approved private operational directory outside the repositories.
+
+### Earlier preparation
+
 The public browser checks on 2026-10-23 reached GitHub Pages and returned 404
 for both pointer paths. This confirms those URLs were not being served by the
 GeoCSV Worker during the check. It does not establish current R2 bucket,
 Cloudflare account, DNSSEC or DS configuration. The local archive was empty
 apart from its untracked `.gitattributes` and `.gitignore`; no candidate or
-schema-3 report was available to inspect. No deployment, upload, DNS change,
-candidate creation or credential access was performed.
+schema-3 report was available to inspect. During this initial inspection, no
+deployment, upload, DNS change, candidate creation or credential access was
+performed.
 
 Subsequent dashboard setup confirmed R2 activation, creation of a private
 testing bucket and a bucket-scoped publisher token. The SDK provider resolved
 the named profile and read-only API access passed; the bucket is empty and its
 testing pointer is absent. Two independent DNS resolvers confirmed Cloudflare
 authority and no DS. Private deployment configuration and a pinned local Worker
-build are prepared; no Worker has been deployed. Wrangler login and account
+build were prepared before deployment. Wrangler login and account
 access are verified. Anonymous GET/HEAD rechecks returned 200 for the landing
 page on apex/www and 404 for both unpublished pointers, through Cloudflare.
 The selection/workspace implementation passed 55 offline publisher

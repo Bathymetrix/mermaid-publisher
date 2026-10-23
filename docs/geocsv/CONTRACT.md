@@ -26,8 +26,9 @@ reject production activation and require explicit collection URLs ending in
 `/testing/` and object prefixes ending in `/testing`. For Bathymetrix, the local
 serving implementation uses `/geocsv/testing/` and keys `geocsv/testing/`.
 Production `/geocsv/latest.json` and `geocsv/latest.json` remain separate.
-The service is not deployed. Infrastructure preparation and test acceptance do
-not authorize production publication, a first release tag or availability claims.
+The read-only Worker was deployed on 2026-10-23; its testing bucket remains
+empty. Infrastructure deployment and test acceptance do not authorize production
+publication, a first release tag or claims of data availability.
 Licensing/citation and explicit upload authorization remain required.
 
 ## Relative collection paths
