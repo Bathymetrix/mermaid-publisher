@@ -163,3 +163,59 @@ remain retireable only through separately authorized cleanup. This publication
 does not authorize production promotion, further uploads or DNS changes;
 DNSSEC restoration was separately completed and verified later on 2026-10-26;
 see the [restoration findings](INFRASTRUCTURE_PLAN.md#dnssec-restoration--2026-10-26).
+
+## Local consumer-baseline revalidation — 2026-10-26
+
+The frozen consumer is `mermaid-geocsv` 0.24.0 at
+`33ed5ff477b6c44447d472fc8e828b5ae930e0db`, containing the completed private
+reader-module rename. Current consumer HEAD
+`5815832e9c5877e010a7295b2949cf4e45042795` has identical package source and
+packaging configuration; its later changes affect hosting documentation only.
+Both revisions passed all 55 publisher compatibility tests in their respective
+CI modes. The publisher `.venv` was restored to the separate, noneditable frozen
+installation before scientific validation. See the
+[baseline review](CONSUMER_BASELINE_REVIEW.md#completed-local-acceptance-refresh).
+
+The original published acceptance report still records consumer `c1eb805`.
+The current gate correctly rejected it for a new acceptance decision because
+the package-code fingerprints differ. It remains unchanged historical evidence
+for the completed publication, with SHA-256
+`b55b28bfd6a040be486f3cd4baa658eae8d1cf38b01e17ed40534e548ed549e8`.
+
+The existing candidate was not recreated or expanded. Its manifest remains
+`dd1eb6c41196c46458d0fc259a1d8fb1bd091ece29ba94253888784f0c27736b` and its
+scope remains exactly P0006/P0045 with `testing_only: true`. The original source
+remained read-only at clean commit `ac10d037f824084693813d62851728a7691374d7`.
+Publisher 0.1.0/report schema 3, Python 3.12.4, NumPy 2.5.3, pandas 3.0.6 and
+ObsPy 1.5.1 were unchanged.
+
+The validator exclusively created this new local report under
+`$MERMAID/publisher/geocsv/testing/validation/2026-10-21T22%3A48%3A33.277Z/`:
+
+`validation-v3-consumer-33ed5ff-20261026T182615Z.json`
+
+- SHA-256: `225c2ad8a35405257629930fc7a54eb264ca7ff382a6738d2d115abcb35a9134`.
+- Report size: 7,092,188 bytes.
+- Run: `2026-10-26T18:27:34.753921Z` to `2026-10-26T18:27:46.458128Z`.
+
+| Instrument | Original pairs | Passed |
+| --- | ---: | ---: |
+| P0006 | 833 | 833 |
+| P0045 | 2,459 | 2,459 |
+| Total | 3,292 | 3,292 |
+
+The run fingerprinted 3,292 MiniSEED files, 3,292 independent SAC references
+and two source GeoCSV files. Failed, missing, unsupported and unexamined counts
+were all zero, with no reported failures. Pair results, measurements, maxima,
+scientific limits, source inventory, staging and provenance bindings match the
+original published report exactly. No full-corpus validation was rerun.
+
+The current `publish_snapshot.py --plan` gate accepted the new report with the
+explicit testing destination and returned `gate passed; no publication
+performed`. All 14 pre-existing archive files were compared with their hashes
+captured before this run and remained byte-identical. Only the new local report
+was added to the archive working tree; no commit or publication receipt was
+created. No storage credentials or private deployment configuration were needed.
+Hosted payloads, manifest, immutable `validation.json` and pointers were not
+changed. This local acceptance does not replace the original publication report
+or authorize uploads, redeployment or DNS changes.

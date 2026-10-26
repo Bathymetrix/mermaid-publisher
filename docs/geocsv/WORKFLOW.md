@@ -170,6 +170,29 @@ URL and storage prefix are explicit; URL must end in `/testing/` and prefix in
 transport requires equivalent conditional writes, exact bytes and safe activation
 from any alternative endpoint; changing a hostname alone does not establish that.
 
+### Local revalidation after a consumer update
+
+An existing published candidate can be revalidated locally without recreating
+it or changing its hosted evidence. Inspect the actual consumer revision and
+public imports, review compatibility, and verify the installed frozen baseline
+before running validation. Retain previous reports unchanged: the acceptance
+gate rejects reports whose software fingerprints differ from the current
+installation, even when the package version is unchanged.
+
+Use the existing candidate and read-only source with `validate_snapshot.py`;
+select a distinct, unused `--report` filename in that candidate's validation
+directory. The report is created exclusively. Validate the complete frozen
+instrument scope, then run `publish_snapshot.py --plan` with that new report
+and the explicit testing destination, as above. Neither command needs storage
+credentials for this local check. Do not run creation, expand the instrument
+scope or rerun a separate full-corpus snapshot for this operation.
+
+A passing local gate establishes scientific acceptance under the current
+software. It does not replace the already published immutable `validation.json`
+or authorize uploads, pointer changes or a publication retry with different
+report bytes. Keep the new local evidence distinct from the report used for
+the original publication.
+
 ## Publication and recording
 
 The publisher gates current evidence, uploads immutable payloads, then manifest

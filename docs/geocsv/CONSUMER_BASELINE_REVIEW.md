@@ -40,7 +40,7 @@ for the exact candidate with the active consumer and pass the publication gate.
 Preserve previous evidence. The already published testing snapshot keeps its
 original immutable validation report; do not overwrite it to refresh evidence.
 
-## Verification
+## Initial compatibility verification
 
 The following checks passed on 2026-10-26:
 
@@ -68,3 +68,37 @@ or pointers were modified, and no new publication was attempted.
 The related consumer hosting guide records the new pin. Website serving behavior
 and its deployment configuration do not depend on the private reader-module
 name; no Worker change or deployment is required.
+
+## Completed local acceptance refresh
+
+The follow-up on 2026-10-26 rechecked consumer history and public imports. Commit
+`33ed5ff477b6c44447d472fc8e828b5ae930e0db` remains the exact completed-rename
+baseline. Current consumer HEAD `5815832e9c5877e010a7295b2949cf4e45042795`
+differs only in `docs/HOSTING.md`; its package sources and packaging configuration
+match the baseline. No additional pin or fingerprint change is required.
+
+Both consumer revisions were installed separately in the existing publisher
+`.venv`, without dependency changes, and checked using the CI test modes:
+
+```bash
+# With current consumer 5815832 installed:
+MERMAID_CONSUMER_BASELINE=0 .venv/bin/python -B -m unittest discover -s tests -v
+# After restoring frozen consumer 33ed5ff:
+MERMAID_CONSUMER_BASELINE=1 .venv/bin/python -B -m unittest discover -s tests -v
+```
+
+Both runs passed all 55 tests. The final installation is noneditable at the
+frozen full commit, with source hashes matching the active baseline fixture;
+`pip check` passed. Public imports remain `from mermaid import geocsv` and
+`geocsv.read`, `associate`, `write_sac` and `fetch`.
+
+The published `validation-v3-testing-layout.json` report was rejected for a new
+acceptance decision with `validation code or dependency versions differ; rerun
+validation`, as expected. Its bytes remain unchanged. A distinct, exclusively
+created local report then passed every original pair for the existing
+P0006/P0045 candidate and passed `publish_snapshot.py --plan`. No creation or
+full-corpus run was performed. The new report, hashes and pair accounting are
+recorded in the [local revalidation findings](SCHEMA3_FINDINGS.md#local-consumer-baseline-revalidation--2026-10-26).
+
+This refresh adds local evidence only. It does not replace the original published
+report or alter hosted objects, pointers, archive history, hosting or DNS.
