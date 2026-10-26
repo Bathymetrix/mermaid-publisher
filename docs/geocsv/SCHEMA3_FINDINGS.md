@@ -161,4 +161,5 @@ SDK and scientific verification evidence is retained in the approved private
 operational location, outside the software checkouts. Initial testing artifacts
 remain retireable only through separately authorized cleanup. This publication
 does not authorize production promotion, further uploads or DNS changes;
-DNSSEC restoration remains pending.
+DNSSEC restoration was separately completed and verified later on 2026-10-26;
+see the [restoration findings](INFRASTRUCTURE_PLAN.md#dnssec-restoration--2026-10-26).

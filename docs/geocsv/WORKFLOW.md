@@ -223,6 +223,8 @@ one/all instruments, memory/disk, local reuse and download provenance passed.
 A complete read/associate/write_sac rerun using hosted downloads passed all
 3,292 original waveform pairs. The receipt and scoped commit are in the local
 archive. See the [publication findings](SCHEMA3_FINDINGS.md#initial-hosted-testing-publication--2026-10-26).
-Full-corpus licensing, DNSSEC restoration, further uploads and production
-activation remain separate outstanding decisions. Canonical source inputs were
-not modified.
+DNSSEC restoration and post-activation DNS, HTTPS/download and email checks
+subsequently passed on 2026-10-26; see the
+[restoration findings](INFRASTRUCTURE_PLAN.md#dnssec-restoration--2026-10-26).
+Full-corpus licensing, further uploads and production activation remain separate
+outstanding decisions. Canonical source inputs were not modified.

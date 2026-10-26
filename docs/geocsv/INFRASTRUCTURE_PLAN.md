@@ -125,11 +125,11 @@ explicit authorization before execution.
 
 ## 6. Restore DNSSEC
 
-- [ ] After hosting verification, enable DNSSEC at the active authoritative
+- [x] After hosting verification, enable DNSSEC at the active authoritative
   provider and install the matching DS at the registrar.
-- [ ] Verify the complete DNSSEC chain from independent validating resolvers.
-- [ ] Recheck site TLS, redirects, email and the testing endpoint after
-  validation is enabled.
+- [x] Verify the complete DNSSEC chain from independent validating resolvers.
+- [x] Recheck site TLS, redirects, email and the testing endpoint after
+  validation is enabled (2026-10-26).
 
 ## Initial testing publication — 2026-10-26
 
@@ -140,7 +140,24 @@ transport, cache, fetch and scientific verification passed, including a fresh
 3,292-pair rerun using hosted downloads. The local archive contains the initial
 candidate commit and a scoped publication receipt commit. See
 [publication findings](SCHEMA3_FINDINGS.md#initial-hosted-testing-publication--2026-10-26).
-No source or DNS changes were made. DNSSEC restoration remains pending.
+No source or DNS changes were made during publication. The separately
+authorized DNSSEC restoration was completed afterward as recorded below.
+
+## DNSSEC restoration — 2026-10-26
+
+After hosting verification, Cloudflare DNSSEC signing was enabled and its
+matching DS record was saved through Squarespace. Cloudflare confirmed active
+protection. Independent Google and Cloudflare validating resolvers returned
+successful authenticated answers for DS, DNSKEY, website-address and mail-routing
+queries, establishing the chain of trust.
+
+Post-activation checks passed for apex/www HTTPS, canonical redirects, the
+GeoCSV landing page and testing pointer/manifest. Both P0006 and P0045 payloads
+were downloaded with identity encoding and matched the published manifest's
+sizes and SHA-256 values. These HTTP checks used the standard library and were
+independent of the consumer environment. Email sending and receiving both
+passed. Detailed verification results remain in the approved private operational
+location; no DNS record values or private configuration are copied here.
 
 ## Preparation and Worker deployment — 2026-10-23
 
