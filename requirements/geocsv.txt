@@ -1,5 +1,5 @@
 # Fixed consumer baseline; update only with an explicit compatibility review.
-mermaid-geocsv[obspy] @ git+https://github.com/Bathymetrix/mermaid-geocsv.git@c1eb805e420f7f8d4bfb8c6f737316c9f5766534
+mermaid-geocsv[obspy] @ git+https://github.com/Bathymetrix/mermaid-geocsv.git@33ed5ff477b6c44447d472fc8e828b5ae930e0db
 numpy==2.5.3
 pandas==3.0.6
 obspy==1.5.1

@@ -2,9 +2,15 @@
 
 This document is the canonical GeoCSV producer/consumer agreement. The fixed
 consumer baseline is mermaid-geocsv 0.24.0 at commit
-`c1eb805e420f7f8d4bfb8c6f737316c9f5766534`. Owning this document does not permit
+`33ed5ff477b6c44447d472fc8e828b5ae930e0db`. Owning this document does not permit
 silent producer/consumer changes: preserve supported consumers and historical
 fixtures, and review protocol changes explicitly across repositories.
+
+The [2026-10-26 compatibility review](CONSUMER_BASELINE_REVIEW.md) adopts this
+revision after an identical reader-module rename and import updates. The
+original baseline fingerprints and historical download fixtures remain retained.
+Existing archived reports describe their original software; future publication
+requires fresh evidence matching the active installed consumer.
 
 ## Ownership
 

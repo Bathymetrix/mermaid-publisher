@@ -1,0 +1,70 @@
+# Consumer baseline review — 2026-10-26
+
+## Decision and source comparison
+
+The active consumer baseline remains `mermaid-geocsv` 0.24.0 and advances from
+`c1eb805e420f7f8d4bfb8c6f737316c9f5766534` to
+`33ed5ff477b6c44447d472fc8e828b5ae930e0db`.
+
+Comparison of the complete package source and `pyproject.toml` establishes:
+
+- `read.py` becomes `_read.py` with identical bytes and SHA-256
+  `cc6be8b0a73376fd23581c1ca564f6d15a02edc039b3661e44d7697acf678afb`.
+- `__init__.py`, `_associate.py` and `_write_sac.py` each update one import.
+- `_fetch.py`, scientific implementation logic, package version, dependencies
+  and packaging configuration are unchanged.
+- Other changes between these revisions concern documentation, tutorial text,
+  audit links and repository instructions.
+
+The supported public operations remain `geocsv.read`, `associate`, `write_sac`
+and `fetch`. Private reader-module imports are not supported public interfaces.
+No manifest format, path, checksum, testing flag, scientific tolerance or report
+schema changes are introduced.
+
+## Installation and retained evidence
+
+`requirements/geocsv.txt` pins the new full commit. The publisher's `.venv`
+contains a separate, noneditable installation built from that exact local Git
+revision with no dependency changes. Installed Python-source filenames and
+hashes must match `tests/geocsv/fixtures/consumer_baseline.json`.
+
+The former baseline fixture is retained byte-for-byte as
+`tests/geocsv/fixtures/consumer_baseline_c1eb805.json`. Historical download
+`manifest.json` and `P0006.geocsv` fixtures remain unchanged. Historical findings,
+archived reports, publication receipts and already hosted bytes remain unchanged.
+
+Reports bind filenames and code hashes as well as package versions. Version
+0.24.0 alone therefore does not make old evidence current under the new
+installation. Before another publication, generate a distinct exhaustive report
+for the exact candidate with the active consumer and pass the publication gate.
+Preserve previous evidence. The already published testing snapshot keeps its
+original immutable validation report; do not overwrite it to refresh evidence.
+
+## Verification
+
+The following checks passed on 2026-10-26:
+
+- Before installation, both focused publisher fetch-compatibility tests passed
+  against the original installed baseline, including the historical manifest.
+- After installation, all 55 publisher tests passed with
+  `MERMAID_CONSUMER_BASELINE=1`. These cover historical download bytes,
+  latest/pinned memory/disk fetch, scientific comparisons, publication gating,
+  testing isolation and local Git recording/recovery using temporary fixtures.
+- The consumer checkout passed 463 tests across `test_read.py`,
+  `test_associate_synthetic.py`, `test_associate.py`, `test_write_sac.py`,
+  `test_fetch.py` and `test_tutorials.py`, using its existing `.venv` and pytest
+  source configuration. Nine expected noninteractive Matplotlib warnings remain.
+- Installed source hashes and installation commit provenance match the new
+  baseline; the installation is noneditable and contains `_read.py` instead of
+  `read.py`. `pip check` found no broken requirements. NumPy 2.5.3, pandas 3.0.6,
+  ObsPy 1.5.1 and boto3 1.43.118 remain unchanged.
+- The historical baseline fixture and both historical download fixture files
+  were compared byte-for-byte with their previous committed versions.
+
+These are local compatibility checks, not fresh canonical-corpus acceptance or
+live hosting verification. No real source data, archive evidence, hosted objects
+or pointers were modified, and no new publication was attempted.
+
+The related consumer hosting guide records the new pin. Website serving behavior
+and its deployment configuration do not depend on the private reader-module
+name; no Worker change or deployment is required.

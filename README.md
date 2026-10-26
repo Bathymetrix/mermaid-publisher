@@ -21,6 +21,9 @@ python3.12 -m venv .venv
 The requirement pins `mermaid-geocsv` to an exact source commit. CI runs both
 that frozen consumer and an explicitly selected current consumer. Updating the
 baseline is a compatibility decision, not a routine dependency refresh.
+The [2026-10-26 baseline review](docs/geocsv/CONSUMER_BASELINE_REVIEW.md)
+records the reader-module rename, preserved historical fingerprints and the
+requirement for fresh validation before another publication.
 `boto3` is used only for publication transport; snapshot creation uses the
 standard library. Dependency versions and code hashes are recorded in reports.
 

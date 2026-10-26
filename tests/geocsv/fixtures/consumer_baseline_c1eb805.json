@@ -1,0 +1,11 @@
+{
+  "version": "0.24.0",
+  "source_commit": "c1eb805e420f7f8d4bfb8c6f737316c9f5766534",
+  "python_sources": {
+    "__init__.py": "d001d38e72c0c39a0d02d61bcd0a08a57ce38b80b655695f0b2e125e51f3724e",
+    "_associate.py": "cf6ebf3040591a05fbd310cfcf4d940f2d86956ea81f503eed9ba8210cd74f3f",
+    "_fetch.py": "05590c2f918b712fc61b3a40ba83213dee19e7983848788945421c52e939238b",
+    "_write_sac.py": "393badb3434af0bfa7bc1bc081510ac4dd63922686f539d615082ee227f18154",
+    "read.py": "cc6be8b0a73376fd23581c1ca564f6d15a02edc039b3661e44d7697acf678afb"
+  }
+}
