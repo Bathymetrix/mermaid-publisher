@@ -56,7 +56,7 @@ def software_versions():
     versions["publisher_code_sha256"] = {
         name: fingerprint(Path(__file__).parent / name)[1] for name in (
             "inspect_snapshot.py", "create_snapshot.py", "validate_snapshot.py",
-            "gate_snapshot.py", "publish_snapshot.py")}
+            "gate_snapshot.py", "publish_snapshot.py", "_verify_sac.py")}
     versions["package_code_sha256"] = {
         path.name: fingerprint(path)[1]
         for path in sorted(Path(geocsv.__file__).parent.glob("*.py"))}

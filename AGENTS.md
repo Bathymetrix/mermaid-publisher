@@ -9,7 +9,10 @@ implemented data type. Keep its code, tests and documentation under their
 `geocsv/` directories. Add shared infrastructure only after another implemented
 workflow demonstrates the need.
 
-Use public `mermaid-geocsv` APIs. Scientific API behavior and package defects
+Use public `mermaid-geocsv` APIs. Current consumers create SAC station location
+headers through `associate(..., create_sac_header=True)`; ObsPy owns writing.
+Retain final-waveform/export checks in internal `_verify_sac.py` and keep the
+fixed 0.24.0 consumer supported through its original public writer. Scientific API behavior and package defects
 belong in that package. Publication-specific comparisons and the versioned
 archive report belong here. Consult current package scientific contracts and
 tests before changing comparisons; do not widen tolerances to pass a corpus.
@@ -30,8 +33,8 @@ and responsible owner before proceeding with dependent implementation or
 publication. Do not silently reconcile conflicts by changing public APIs,
 download semantics, scientific rules, the consumer baseline or fixed fixtures.
 
-There are three commands: create, validate and publish. `inspect_snapshot.py`
-and `gate_snapshot.py` are internal modules. Preserve scientific comparison
+There are three commands: create, validate and publish. `inspect_snapshot.py`,
+`gate_snapshot.py` and `_verify_sac.py` are internal modules. Preserve scientific comparison
 rules and exact-byte immutability. Keep manifest/download changes distinct from
 local report and provenance changes.
 

@@ -1,7 +1,9 @@
 # GeoCSV snapshot validation and report version 3
 
 `mermaid-publisher/scripts/geocsv/validate_snapshot.py` orchestrates the public
-`mermaid-geocsv` read → associate → write_sac APIs. It requires Python 3.11+,
+`mermaid-geocsv` read → associate(create_sac_header=True) APIs, followed by
+publisher-only export checks and ObsPy writing. The frozen 0.24.0 consumer
+retains its existing public-exporter compatibility path. Validation requires Python 3.11+,
 `mermaid-geocsv` with its ObsPy extra, and original local MiniSEED/SAC inputs.
 The source tree is read-only. Temporary exports, frozen products and reports
 may use an ordinary temporary workspace, separate from the source tree and
@@ -67,7 +69,7 @@ Version 1's exact independent-reference interval criterion is not reused.
 
 | Check | Rule |
 | --- | --- |
-| Strict association | `associate(..., time_tolerance=0.001, allow_first_segment=False)`; require `single_segment` |
+| Strict association | `associate(..., time_tolerance=0.001, allow_first_segment=False, create_sac_header=True)` for current consumers; require `single_segment` |
 | Rate association | Package's documented floating endpoint test within 0.00001 Hz; measured absolute difference retained diagnostically |
 | Identity | Exported, native MiniSEED and independently read reference SNCL agree |
 | Count | Exported/reference `npts` equal native loaded count exactly |
@@ -90,7 +92,14 @@ in degrees_east, sea-level STEL=0 metres, and approximate depth from WaterPressu
 in mbar divided by 100. This reproduces the producer's convention, not a physical
 pressure-to-depth model. REQ source quality D may omit pressure; depth remains
 undefined, without borrowing another record's value. Missing DET pressure fails
-through the public exporter. All coordinate/unit validation stays in the package.
+during requested header creation. Scientific projection remains in the package;
+independent verification and all former exporter guards are retained in
+[`_verify_sac.py`](SAC_VERIFICATION.md).
+
+The report also fingerprints `_verify_sac.py`; changing its checks invalidates
+old acceptance evidence without changing schema 3 or scientific tolerances.
+The [migration inventory](SAC_VERIFICATION.md#verification-migration-inventory)
+accounts for every former exporter test.
 
 No whole-SAC-header or byte equivalence is asserted. Calibration, instrument,
 orientation and producer-specific trigger headers are outside comparison scope.

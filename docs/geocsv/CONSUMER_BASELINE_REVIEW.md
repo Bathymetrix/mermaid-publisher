@@ -102,3 +102,15 @@ recorded in the [local revalidation findings](SCHEMA3_FINDINGS.md#local-consumer
 
 This refresh adds local evidence only. It does not replace the original published
 report or alter hosted objects, pointers, archive history, hosting or DNS.
+
+## SAC API refactor compatibility — 2026-10-26
+
+Consumer 0.25.0 removes `write_sac` and adds `create_sac_header=False` to
+association. This is an explicit scientific API change, not a fetch/download
+protocol change. The supported frozen baseline, requirement pin, source
+fingerprints and historical download fixtures remain unchanged. Publisher
+0.2.0 supports both paths, retains every exporter guard in its internal
+verification and fingerprints that code in schema-3 evidence. See the
+[SAC verification migration inventory](SAC_VERIFICATION.md) for scope and
+local checks. Existing corpus reports and hosted objects remain historical;
+no fresh corpus acceptance or deployment is claimed for this refactor.

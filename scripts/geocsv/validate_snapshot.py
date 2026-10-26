@@ -4,9 +4,12 @@
 import argparse
 from datetime import datetime, timezone
 import json
+import inspect
 from pathlib import Path
 import sys
 import tempfile
+
+from _verify_sac import write_verified_sac
 
 from gate_snapshot import (
     CHECKS, LIMITS, SCHEMA, SCOPE, VERSION, check_staging_inventory, inventory_sources, measured_maxima,
@@ -16,14 +19,13 @@ from inspect_snapshot import check_source_provenance, fingerprint, json_bytes, r
 
 
 def compare_pair(trace, reference_path, output_path):
-    """Call the public exporter; compare only the documented scientific surfaces."""
+    """Verify the consumer projection and compare an ObsPy scratch export."""
     import numpy as np
-    from mermaid import geocsv
     from obspy.io.sac import SACTrace
 
     checks = dict.fromkeys(CHECKS, False)
     checks["strict_association"] = trace.stats.geocsv.association.type == "single_segment"
-    geocsv.write_sac(trace, output_path)
+    write_verified_sac(trace, output_path)
     actual = SACTrace.read(str(output_path))
     # Read the independent SAC only AFTER association/export; never supply it upstream.
     reference = SACTrace.read(str(reference_path))
@@ -180,8 +182,13 @@ def validate_snapshot(candidate, source_root, report_path, *, batch_size=128, pr
                         fail(instrument, pair, "read_mseed", exc)
                 if loaded:
                     try:
+                        # Baseline 0.24.0 keeps its public exporter; current
+                        # consumers explicitly create SAC headers at association.
+                        options = ({"create_sac_header": True}
+                                   if "create_sac_header" in inspect.signature(geocsv.associate).parameters else {})
                         geocsv.associate(Stream([trace for _, trace in loaded]), tables,
-                                         time_tolerance=LIMITS["association_time_seconds"], allow_first_segment=False)
+                                         time_tolerance=LIMITS["association_time_seconds"],
+                                         allow_first_segment=False, **options)
                     except Exception as exc:
                         # The public API is transactional. A failed batch has no accepted associations.
                         for pair, _ in loaded:

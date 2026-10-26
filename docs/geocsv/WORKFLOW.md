@@ -14,7 +14,8 @@ flowchart TB
     create --> snapshot["workspace/testing/snapshots/{ID}: frozen instrument scope"]
     snapshot --> validate["validate_snapshot.py"]
     source --> validate
-    api["mermaid-geocsv: read → associate → write_sac"] -.-> validate
+    api["mermaid-geocsv: read → associate(create_sac_header=True)"] -.-> validate
+    sac["ObsPy writing + _verify_sac.py guards"] -.-> validate
     validate --> report["testing/validation/{ID}/report.json"]
     report --> gate["gate_snapshot.py — current evidence"]
     snapshot --> gate
@@ -26,6 +27,11 @@ flowchart TB
     latest --> receipt["testing/publications/ — receipt and scoped local Git commit"]
     objects -.-> host["bathymetrix-site: read-only R2 Worker"]
 ```
+
+Current consumers supply fresh SAC station location headers at association;
+ObsPy supplies writing and the publisher verifies final-waveform consistency,
+storage and round trips. The frozen baseline remains supported. See the
+[SAC verification inventory](SAC_VERIFICATION.md).
 
 ## Sources and archive
 
@@ -229,7 +235,7 @@ reuse objects; conflicts never overwrite them.
 
 ## Status and verification
 
-Publisher 0.1.0/report schema 3 preserve scientific comparison rules from the
+Publisher 0.2.0/report schema 3 preserve scientific comparison rules from the
 website's schema-2 workflow. Historical 43,365-pair acceptance is retained as
 historical evidence, not reused. Fresh schema-3 validation of every original pair
 in the frozen instrument scope is required for each candidate. Scientific

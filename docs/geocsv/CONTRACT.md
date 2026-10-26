@@ -16,13 +16,21 @@ requires fresh evidence matching the active installed consumer.
 
 `mermaid-publisher` owns creation, archive validation, its report schema,
 publication gate, transfer and local recording. `mermaid-geocsv` owns public
-fetch/read/associate/write_sac APIs and scientific behavior. Automaid owns
-scientific source generation. `bathymetrix-site` owns its read-only download
+fetch/read/associate APIs and optional SAC station location projection.
+The publisher owns export verification and uses ObsPy for current-consumer
+writing; the frozen 0.24.0 consumer keeps its public exporter compatibility
+path. Automaid owns scientific source generation. `bathymetrix-site` owns its read-only download
 service, landing page and hosting runbook. Hosting can change independently.
 
 Repository version, validation-report schema and download compatibility are
 separate concerns. Migration preserves the manifest/download format; report
 schema 3 is an explicit local evidence revision, not a new fetch protocol.
+
+Consumer 0.25.0 removes its public writer and adds `create_sac_header`. This
+scientific API migration does not change the fixed fetch baseline, historical
+fixtures, manifests, URLs or byte semantics. The publisher supports both
+consumer paths; [SAC verification](SAC_VERIFICATION.md) records every retained
+check. Evidence remains bound to the exact installed software.
 
 ## Current publication phase: testing only
 

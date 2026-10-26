@@ -5,7 +5,7 @@ Create, validate, gate and publish immutable MERMAID data snapshots.
 This repository contains maintainer tools. GeoCSV is the only implemented
 workflow, under `scripts/geocsv/`. Future data types can use sibling directories.
 Scientific GeoCSV APIs remain in `mermaid-geocsv`; Bathymetrix hosting remains in
-`bathymetrix-site`. Repository version: **0.1.0**, independently maintained in
+`bathymetrix-site`. Repository version: **0.2.0**, independently maintained in
 `VERSION`. No formal software or production data release has been published.
 
 ## Setup
@@ -34,6 +34,7 @@ standard library. Dependency versions and code hashes are recorded in reports.
 | `create_snapshot.py` | Stage verbatim GeoCSV and freeze inventory, manifest and source provenance |
 | `inspect_snapshot.py` | Internal snapshot integrity and source/workspace checks |
 | `validate_snapshot.py` | Scientific comparisons and complete archive report |
+| `_verify_sac.py` | Internal final-waveform, projection and scratch-export verification |
 | `gate_snapshot.py` | Internal current-evidence publication gate |
 | `publish_snapshot.py` | Transfer, exact-byte checks, latest activation and local archive recording |
 
@@ -69,10 +70,25 @@ No credentials or private deployment configuration belong in either Git reposito
 - [Historical version-2 archive findings](docs/geocsv/ARCHIVE_FINDINGS.md)
 - [Fresh schema-3 full-corpus and testing-batch findings](docs/geocsv/SCHEMA3_FINDINGS.md)
 
+## SAC header compatibility
+
+Current consumers use `associate(..., create_sac_header=True)` and ObsPy writing.
+The publisher retains the former exporter checks in `_verify_sac.py` and keeps
+the fixed 0.24.0 consumer supported through its original public writer. The
+baseline pin and historical download fixtures are unchanged. See the
+[complete verification migration inventory](docs/geocsv/SAC_VERIFICATION.md).
+
 ## Verification
 
 ```bash
 MERMAID_CONSUMER_BASELINE=1 .venv/bin/python -B -m unittest discover -s tests -v
+```
+
+To test the adjacent refactored consumer without changing the pinned install:
+
+```bash
+PYTHONPATH=../mermaid-geocsv/src MERMAID_CONSUMER_BASELINE=0 \
+  .venv/bin/python -B -m unittest discover -s tests -v
 ```
 
 Tests use synthetic sources, temporary Git repositories and localhost HTTP.
