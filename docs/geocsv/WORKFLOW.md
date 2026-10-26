@@ -216,9 +216,13 @@ do not authorize production promotion or a first formal release.
 Offline tests cover scientific comparisons, changed inputs/evidence, clean Git
 sources, source tracking/revision changes, dedicated Git archives, publication
 sequencing, testing isolation and recording recovery. CI exercises frozen and
-current consumers separately. Real R2/SDK behavior, deployed cache controls,
-complete hosted downloads, data licensing and DNSSEC restoration remain
-pending. The testing scope, MH network DOI and initial-artifact retirement notice
-are published on the website landing page; this does not authorize an upload.
-No live upload, deployment, full-archive rerun or source modification
-is performed by the migration.
+current consumers separately. The initial P0006/P0045 testing snapshot was
+explicitly authorized and published on 2026-10-26. Live R2 conditional-write
+rejection, exact HTTPS bytes, cache hits and controls, latest/pinned fetch,
+one/all instruments, memory/disk, local reuse and download provenance passed.
+A complete read/associate/write_sac rerun using hosted downloads passed all
+3,292 original waveform pairs. The receipt and scoped commit are in the local
+archive. See the [publication findings](SCHEMA3_FINDINGS.md#initial-hosted-testing-publication--2026-10-26).
+Full-corpus licensing, DNSSEC restoration, further uploads and production
+activation remain separate outstanding decisions. Canonical source inputs were
+not modified.

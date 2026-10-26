@@ -7,7 +7,9 @@ Independent schema-3 reports passed the scientific acceptance gate. Current
 acceptance is refreshed after local layout changes as recorded below.
 The full-corpus check uses an ordinary temporary workspace. The publication
 archive contains only the independently accepted P0006/P0045 candidate.
-No data were uploaded and no latest pointer or publication receipt was created.
+At the 2026-10-23 validation stage, no data were uploaded and no latest pointer
+or publication receipt was created. The separately authorized initial testing
+publication on 2026-10-26 is recorded below.
 
 ## Inputs and software
 
@@ -75,7 +77,8 @@ The full snapshot, report and run log remain in their temporary workspace,
 with no archival obligation or publication intent. The P0006/P0045 snapshot,
 staging inventory, report, run log and read-only acceptance plan remain under
 `$MERMAID/publisher/geocsv/testing/`. Its frozen staging schema 2 explicitly contains
-only P0006 and P0045. There are no publication receipts or archive commits yet.
+only P0006 and P0045. At that stage there were no publication receipts or
+archive commits.
 
 The read-only `publish_snapshot.py --plan` gate passed for each snapshot and
 reported `gate passed; no publication performed`. These checks performed no
@@ -120,3 +123,42 @@ Subsequent focused verification passed all 55 publisher tests with the exact
 consumer baseline, 11 Worker serving tests and 70 package fetch/tutorial tests.
 The publisher tests exercise fixture-only local Git recording and recovery in
 the new testing namespace; no live storage writes were performed.
+
+## Initial hosted testing publication — 2026-10-26
+
+The exact P0006/P0045 candidate was explicitly authorized for testing upload.
+Its current gate passed before transfer and again before activation. The
+publisher uploaded only the two GeoCSV payloads, manifest and accepted
+`validation-v3-testing-layout.json` report (served as `validation.json`), then
+verified exact SDK/HTTPS bytes and pinned public fetch before selecting testing
+latest. The collection contains exactly those four immutable objects and its
+one latest pointer. Production latest remains absent.
+
+The public manifest is available at
+[the pinned testing URL](https://bathymetrix.com/geocsv/testing/releases/2026-10-21T22%3A48%3A33.277Z/manifest.json).
+GET/HEAD checks passed with testing labels and identity encoding. Repeated
+immutable requests returned cache hits with the one-year immutable/no-transform
+policy; latest and convenience redirects remained no-store. Missing objects,
+missing instruments and double-encoded release paths returned uncached 404s.
+Conditional create against the existing manifest and a stale-ETag latest write
+both returned 412 using identical published bytes; bytes, ETags and modification
+times were unchanged.
+
+The unmodified consumer passed latest/pinned, one/all instruments, memory/disk,
+explicit ordering, identical local-file reuse and download-provenance checks.
+The downloaded payloads were then placed in a temporary validation workspace
+with byte-identical local staging/provenance evidence. The existing schema-3
+validator reran read, strict association, SAC export and independent reference
+comparison for every selected original waveform pair. All 833 P0006 pairs and
+2,459 P0045 pairs passed: 3,292 passed and zero failed, missing, unsupported or
+unexamined. The new report passed the current acceptance gate. Original sources
+remained clean and unchanged. The published acceptance report was not replaced.
+
+The separate local archive has initial commit `f3eb04b` and scoped publication
+commit `f5b81ea`. Its receipt is
+`geocsv/testing/publications/20261026T140711.532138Z.json`. Detailed hosted HTTP,
+SDK and scientific verification evidence is retained in the approved private
+operational location, outside the software checkouts. Initial testing artifacts
+remain retireable only through separately authorized cleanup. This publication
+does not authorize production promotion, further uploads or DNS changes;
+DNSSEC restoration remains pending.

@@ -6,7 +6,7 @@ This repository contains maintainer tools. GeoCSV is the only implemented
 workflow, under `scripts/geocsv/`. Future data types can use sibling directories.
 Scientific GeoCSV APIs remain in `mermaid-geocsv`; Bathymetrix hosting remains in
 `bathymetrix-site`. Repository version: **0.1.0**, independently maintained in
-`VERSION`. No software or scientific data release has been published.
+`VERSION`. No formal software or production data release has been published.
 
 ## Setup
 
@@ -51,7 +51,11 @@ Original MiniSEED/SAC archives remain at their source; only their evidence is ar
 All hosted data are **testing only**. Current commands require explicit HTTPS
 collection URLs ending in `/testing/` and storage prefixes ending in `/testing`.
 Production promotion, remote uploads and deployment require explicit authorization.
-The R2/S3 transport is implemented locally; live SDK/hosting behavior remains unverified.
+The initial P0006/P0045 testing snapshot was published on 2026-10-26. Live
+conditional-write rejection, exact-byte downloads, caching, fetch modes and all
+3,292 scientific waveform-pair comparisons passed. See the
+[publication findings](docs/geocsv/SCHEMA3_FINDINGS.md#initial-hosted-testing-publication--2026-10-26).
+Further uploads and production promotion still require explicit authorization.
 No credentials or private deployment configuration belong in either Git repository.
 
 ## Documentation

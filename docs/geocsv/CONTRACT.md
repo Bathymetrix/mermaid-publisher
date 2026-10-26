@@ -26,13 +26,15 @@ reject production activation and require explicit collection URLs ending in
 `/testing/` and object prefixes ending in `/testing`. For Bathymetrix, the local
 serving implementation uses `/geocsv/testing/` and keys `geocsv/testing/`.
 Production `/geocsv/latest.json` and `geocsv/latest.json` remain separate.
-The read-only Worker was deployed on 2026-10-23; its testing bucket remains
-empty. The public landing page now identifies the P0006/P0045 testing scope,
-provides the MH network DOI (10.7914/SN/MH), and states that initial workflow
-tests may be retired after verification. Infrastructure deployment, landing-page
-publication and test acceptance do not authorize data upload, production
-publication, a first release tag or claims of data availability. Data licensing
-approval and explicit testing-upload authorization remain required.
+The read-only Worker was deployed on 2026-10-23. The explicitly authorized
+P0006/P0045 testing snapshot `2026-10-21T22:48:33.277Z` was published on
+2026-10-26 and is selected by the testing pointer. Production remains inactive.
+The public landing page identifies that scope, provides the MH network DOI
+(10.7914/SN/MH), and states that initial workflow tests may be retired after
+verification. Infrastructure deployment, landing-page publication and test
+acceptance do not authorize further uploads, production publication or a first
+release tag. Required licensing/citation decisions and explicit authorization
+remain prerequisites for any further publication.
 
 Initial workflow-testing snapshots are disposable qualification artifacts, not
 permanent scientific releases. After workflow verification, an explicitly

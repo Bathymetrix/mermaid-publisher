@@ -50,7 +50,7 @@ authorized. Production retention remains indefinite.
 - [x] Prepare the testing-only scope, MH network DOI and retirement notice in
   the landing-page source. No general data license is inferred from the software license or the
   limited testing authorization.
-- [ ] Ship and verify that landing-page description before data uploads.
+- [x] Ship and verify that landing-page description before data uploads (2026-10-26).
 
 ## 3. Prepare isolated private testing hosting
 
@@ -59,7 +59,8 @@ authorized. Production retention remains indefinite.
   custom domain.
 - [x] Establish a bucket-scoped Object Read & Write operator token and save it
   in the SDK credential provider. Read-only ListObjectsV2/HeadObject checks
-  passed without credential output; live conditional writes remain untested.
+  passed without credential output. Live conditional-write rejection subsequently
+  passed during the authorized testing publication.
 - [x] Prepare external Worker deployment configuration using the existing
   `workers/geocsv/wrangler.example.jsonc` template and the approved private
   bucket binding. Pin Wrangler 4.152.0 privately and verify its local dry-run
@@ -107,18 +108,19 @@ explicit authorization before execution.
 - [x] Deploy the private R2 binding and read-only Worker on the approved route.
 - [x] Verify landing-page pass-through, GET/HEAD pointer misses, immutable-path
   misses, no-store error responses and the www-to-apex redirect. Confirm the
-  bucket remains empty and both testing and production pointers are absent.
-- [ ] Verify conditional immutable writes and conflict handling with isolated
-  testing objects.
-- [ ] Verify exact HTTPS bytes, identity encoding, cache behavior, uncached
-  latest responses and misses, and correct `testing_only: true` labels.
-- [ ] Verify testing and production pointers and object prefixes remain
-  isolated; confirm no production pointer changes.
-- [ ] Upload only after the candidate gate passes and upload is explicitly
+  bucket was empty and both testing and production pointers were absent before
+  the authorized initial upload.
+- [x] Verify conditional immutable-create and stale latest-write rejection with
+  already-published identical bytes; object bytes and metadata remain unchanged.
+- [x] Verify exact HTTPS bytes, identity encoding, cache hits and controls,
+  uncached latest responses and misses, and correct testing labels.
+- [x] Verify testing and production pointers and object prefixes remain
+  isolated; confirm the production pointer remains absent.
+- [x] Upload only after the candidate gate passes and upload is explicitly
   authorized. Verify every object against local byte count and SHA-256.
-- [ ] Verify pinned and latest `mermaid-geocsv.fetch`, one-instrument and
-  complete-inventory downloads, disk and memory modes, and scientific use.
-- [ ] Confirm successful publication is recorded in the separate local archive
+- [x] Verify pinned and latest `mermaid-geocsv.fetch`, one/all instruments,
+  disk/memory, local reuse and all 3,292 scientific waveform pairs with hosted bytes.
+- [x] Confirm successful publication is recorded in the separate local archive
   with a scoped commit and receipt. Never push automatically.
 
 ## 6. Restore DNSSEC
@@ -129,7 +131,18 @@ explicit authorization before execution.
 - [ ] Recheck site TLS, redirects, email and the testing endpoint after
   validation is enabled.
 
-## Current execution notes
+## Initial testing publication — 2026-10-26
+
+The authorized P0006/P0045 snapshot `2026-10-21T22:48:33.277Z` is published
+under the isolated testing collection. Its four immutable objects and testing
+latest pointer are present; the production pointer remains absent. Complete
+transport, cache, fetch and scientific verification passed, including a fresh
+3,292-pair rerun using hosted downloads. The local archive contains the initial
+candidate commit and a scoped publication receipt commit. See
+[publication findings](SCHEMA3_FINDINGS.md#initial-hosted-testing-publication--2026-10-26).
+No source or DNS changes were made. DNSSEC restoration remains pending.
+
+## Preparation and Worker deployment — 2026-10-23
 
 Fresh schema-3 validation and acceptance completed on 2026-10-23. The full
 temporary snapshot passed all 43,365 original waveform pairs across 103
