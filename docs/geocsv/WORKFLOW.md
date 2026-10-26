@@ -160,9 +160,10 @@ the scientific gate. Without them it reports publication blocked. Validation
 uses bounded batches, strict original-segment association and independent SAC
 references. It does not calibrate, merge, repair or copy waveform archives.
 
-An actual publication requires explicit authorization, licensing/citation,
-a deployed service, local Git author configuration and SDK credentials resolved
-outside the checkout. Replace `--plan` with `--endpoint-url "$GEOCSV_S3_ENDPOINT"`
+An actual publication requires explicit testing-upload authorization, approved
+data licensing and any required citation, a deployed service, local Git author
+configuration, and SDK credentials resolved outside the checkout. Replace
+`--plan` with `--endpoint-url "$GEOCSV_S3_ENDPOINT"`
 and `--bucket "$GEOCSV_BUCKET"` only for an authorized operation. Both public
 URL and storage prefix are explicit; URL must end in `/testing/` and prefix in
 `/testing`. Production activation is currently rejected. The existing R2/S3
@@ -216,6 +217,8 @@ Offline tests cover scientific comparisons, changed inputs/evidence, clean Git
 sources, source tracking/revision changes, dedicated Git archives, publication
 sequencing, testing isolation and recording recovery. CI exercises frozen and
 current consumers separately. Real R2/SDK behavior, deployed cache controls,
-complete hosted downloads, licensing/citation and DNSSEC restoration remain
-pending. No live upload, deployment, full-archive rerun or source modification
+complete hosted downloads, data licensing and DNSSEC restoration remain
+pending. The testing scope, MH network DOI and initial-artifact retirement notice
+are published on the website landing page; this does not authorize an upload.
+No live upload, deployment, full-archive rerun or source modification
 is performed by the migration.
