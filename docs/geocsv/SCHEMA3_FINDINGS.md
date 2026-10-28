@@ -1,5 +1,10 @@
 # Fresh schema-3 validation findings — 2026-10-23
 
+The dated findings below retain their original paths and software provenance.
+The 2026-10-28 [hyphenated-path replacement](RELEASE_PATH_REVIEW.md) supersedes
+the original hosted testing paths; their encoded URLs have been retired.
+Historical local evidence is retained.
+
 Release ID: `2026-10-21T22:48:33.277Z`.
 
 Two separate frozen snapshots were created and validated with publisher 0.1.0.

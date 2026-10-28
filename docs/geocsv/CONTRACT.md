@@ -1,10 +1,14 @@
 # GeoCSV publication and download agreement
 
 This document is the canonical GeoCSV producer/consumer agreement. The fixed
-consumer baseline is mermaid-geocsv 0.24.0 at commit
+historical scientific/download consumer baseline is mermaid-geocsv 0.24.0 at commit
 `33ed5ff477b6c44447d472fc8e828b5ae930e0db`. Owning this document does not permit
-silent producer/consumer changes: preserve supported consumers and historical
-fixtures, and review protocol changes explicitly across repositories.
+silent producer/consumer changes: retain historical fixtures and review
+protocol changes explicitly across repositories. The authorized
+[2026-10-28 path review](RELEASE_PATH_REVIEW.md) requires consumer >= 0.26.0
+for the replacement timestamped testing collection. The frozen baseline is
+retained for historical downloads and scientific compatibility, not the new
+path protocol.
 
 The [2026-10-26 compatibility review](CONSUMER_BASELINE_REVIEW.md) adopts this
 revision after an identical reader-module rename and import updates. The
@@ -23,8 +27,9 @@ path. Automaid owns scientific source generation. `bathymetrix-site` owns its re
 service, landing page and hosting runbook. Hosting can change independently.
 
 Repository version, validation-report schema and download compatibility are
-separate concerns. Migration preserves the manifest/download format; report
-schema 3 is an explicit local evidence revision, not a new fetch protocol.
+separate concerns. Report schema 3 is a local evidence revision independent of download-path
+changes. Publisher 0.3.0 and consumer 0.26.0 implement the explicitly reviewed
+hyphenated path protocol; manifest fields and scientific release IDs are unchanged.
 
 Consumer 0.25.0 removes its public writer and adds `create_sac_header`. This
 scientific API migration does not change the fixed fetch baseline, historical
@@ -42,7 +47,11 @@ serving implementation uses `/geocsv/testing/` and keys `geocsv/testing/`.
 Production `/geocsv/latest.json` and `geocsv/latest.json` remain separate.
 The read-only Worker was deployed on 2026-10-23. The explicitly authorized
 P0006/P0045 testing snapshot `2026-10-21T22:48:33.277Z` was published on
-2026-10-26 and is selected by the testing pointer. Production remains inactive.
+2026-10-26. On 2026-10-28 the same unchanged data/manifest were republished
+under hyphenated paths and selected by testing latest, with fresh scientific
+evidence. The four old testing objects and encoded URLs were retired. See the
+[path review and replacement evidence](RELEASE_PATH_REVIEW.md). Production
+remains inactive.
 The public landing page identifies that scope, provides the MH network DOI
 (10.7914/SN/MH), and states that initial workflow tests may be retired after
 verification. Infrastructure deployment, landing-page publication and test
@@ -66,9 +75,9 @@ The same relative download agreement applies within a chosen collection:
 ```text
 latest.json
 latest/<instrument_id>.geocsv
-releases/<encoded-release-component>/manifest.json
-releases/<encoded-release-component>/<instrument_id>.geocsv
-releases/<encoded-release-component>/validation.json
+releases/<release-component>/manifest.json
+releases/<release-component>/<instrument_id>.geocsv
+releases/<release-component>/validation.json
 ```
 
 Convenience latest file paths return temporary 302 redirects. Fetch resolves
@@ -77,7 +86,7 @@ separate base URLs, object namespaces and activation pointers. Their relative
 manifest paths retain the same format. Exact delivered bytes and conditional
 immutable writes/latest activation are destination requirements.
 
-## Literal release identity and encoded paths
+## Literal release identity and hyphenated paths
 
 Scientific `release_id` is the exact GeoCSV `#created` value, with grammar
 `YYYY-MM-DDTHH:MM:SS[.digits]Z`, a valid calendar date, hours 00–23 and seconds
@@ -85,18 +94,24 @@ Scientific `release_id` is the exact GeoCSV `#created` value, with grammar
 across the complete snapshot. Missing, repeated or mixed declarations raise.
 Preserve all fractional digits; do not round or reformat the identity.
 
-Compute `release_component = urllib.parse.quote(release_id, safe="")`:
+Compute `release_component = release_id.replace(":", "-")` only for the
+validated creation-timestamp release ID. This is a path representation, not a
+replacement timestamp format. Do not rewrite GeoCSV contents, `#created`,
+JSON release IDs, provenance or any other dates/times:
 
 | Context | Example |
 | --- | --- |
 | JSON and fetch argument | `2026-10-21T22:48:33.277Z` |
-| URL and local staging/download directory | `2026-10-21T22%3A48%3A33.277Z` |
-| R2 release-key component | `2026-10-21T22:48:33.277Z` |
+| URL, R2 key and new local snapshot/staging/validation/download directory | `2026-10-21T22-48-33.277Z` |
 
-Worker lookup decodes the URL release component exactly once. It never decodes
-again or stores `%3A` in keys. Do not double-encode `%` as `%25`. Equivalent
-instants with different fractional spellings are distinct release IDs. Token IDs
-remain supported by the client/Worker for illustrative test releases only.
+Worker lookup uses the plain path component directly as its storage-key
+component. Literal colons and percent-encoded components are rejected before
+cache lookup. No URL decoding or legacy aliases are required. Equivalent
+instants with different fractional spellings remain distinct release IDs.
+Token IDs remain supported unchanged for illustrative client/Worker tests only.
+Historical local encoded directories remain readable for archive verification
+and receipt recovery; new snapshots use hyphens, and creation checks both
+layouts for same-identity byte conflicts. Existing local downloads are not moved.
 
 ## Exact manifest protocol
 
@@ -106,11 +121,11 @@ Testing-only latest-pointer format (relative to its isolated collection):
 {
   "release_id": "2026-10-21T22:48:33.277Z",
   "testing_only": true,
-  "manifest": "releases/2026-10-21T22%3A48%3A33.277Z/manifest.json"
+  "manifest": "releases/2026-10-21T22-48-33.277Z/manifest.json"
 }
 ```
 
-The relative manifest path must exactly match its encoded release. Its
+The relative manifest path must exactly match its hyphenated release component. Its
 `testing_only` flag must match the manifest and remain true throughout the current
 testing phase. No `release_component` JSON field is needed.
 
@@ -164,7 +179,7 @@ An explicit literal release ID bypasses latest. Latest is read once per fetch
 operation; manifest identity and test flags must agree. A missing release or
 instrument raises without fallback. Files are discovered from the manifest,
 not HTML scraping or guessed sequential IDs. Downloads are streamed and accepted
-only after size/SHA-256 checks. Pin/cache directories by encoded release, and
+only after size/SHA-256 checks. Pin/cache directories by hyphenated release component, and
 retain the exact manifest and literal release provenance.
 
 Under an existing release ID, payloads and manifests are immutable. Identical

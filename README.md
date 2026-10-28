@@ -5,7 +5,7 @@ Create, validate, gate and publish immutable MERMAID data snapshots.
 This repository contains maintainer tools. GeoCSV is the only implemented
 workflow, under `scripts/geocsv/`. Future data types can use sibling directories.
 Scientific GeoCSV APIs remain in `mermaid-geocsv`; Bathymetrix hosting remains in
-`bathymetrix-site`. Repository version: **0.2.0**, independently maintained in
+`bathymetrix-site`. Repository version: **0.3.0**, independently maintained in
 `VERSION`. No formal software or production data release has been published.
 
 ## Setup
@@ -18,8 +18,12 @@ python3.12 -m venv .venv
 .venv/bin/python -m pip install -r requirements/geocsv.txt
 ```
 
-The requirement pins `mermaid-geocsv` to an exact source commit. CI runs both
-that frozen consumer and an explicitly selected current consumer. Updating the
+The requirement retains the exact historical `mermaid-geocsv` 0.24.0 source
+pin for scientific and old-protocol checks. New publication requires consumer
+>= 0.26.0 for hyphenated release paths. For local operations with the adjacent
+updated source, prefix commands with `PYTHONPATH=../mermaid-geocsv/src`; this
+selects it without replacing the frozen installation. CI runs both
+the frozen consumer and an explicitly selected current consumer. Updating the
 baseline is a compatibility decision, not a routine dependency refresh.
 The [2026-10-26 baseline review](docs/geocsv/CONSUMER_BASELINE_REVIEW.md)
 records the reader-module rename, preserved historical fingerprints and the
@@ -50,6 +54,10 @@ publication intent. Only publishing requires the dedicated persistent archive.
 The canonical external archive is `$MERMAID/publisher`, a separate local Git
 repository. Testing GeoCSV artifacts reside under
 `geocsv/testing/{snapshots,staging,validation,publications}`.
+New release components replace only creation-timestamp colons with hyphens;
+GeoCSV bytes and literal release IDs remain unchanged. The authorized
+replacement testing set requires updated fetch/hosting code. Its old URLs may
+be retired; see the [compatibility review](docs/geocsv/RELEASE_PATH_REVIEW.md).
 Original MiniSEED/SAC archives remain at their source; only their evidence is archived.
 
 All hosted data are **testing only**. Current commands require explicit HTTPS
@@ -59,13 +67,19 @@ The initial P0006/P0045 testing snapshot was published on 2026-10-26. Live
 conditional-write rejection, exact-byte downloads, caching, fetch modes and all
 3,292 scientific waveform-pair comparisons passed. See the
 [publication findings](docs/geocsv/SCHEMA3_FINDINGS.md#initial-hosted-testing-publication--2026-10-26).
-Further uploads and production promotion still require explicit authorization.
+The authorized 2026-10-28 replacement now serves the same data and manifest
+under hyphenated paths. Its fresh scientific report passed all 3,292 pairs;
+latest/pinned and disk/memory fetch passed, and the four old testing objects
+were retired. [Replacement evidence](docs/geocsv/RELEASE_PATH_REVIEW.md) records
+the deployed Worker, receipt and local archive commit. Further uploads and
+production promotion still require explicit authorization.
 No credentials or private deployment configuration belong in either Git repository.
 
 ## Documentation
 
 - [Create, validate, gate, publish and recover](docs/geocsv/WORKFLOW.md)
 - [Publication/download contract](docs/geocsv/CONTRACT.md)
+- [Hyphenated path review and testing replacement](docs/geocsv/RELEASE_PATH_REVIEW.md)
 - [Scientific checks and report schema 3](docs/geocsv/VALIDATION.md)
 - [Historical version-2 archive findings](docs/geocsv/ARCHIVE_FINDINGS.md)
 - [Fresh schema-3 full-corpus and testing-batch findings](docs/geocsv/SCHEMA3_FINDINGS.md)

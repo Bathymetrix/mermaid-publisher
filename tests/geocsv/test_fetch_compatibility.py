@@ -13,6 +13,7 @@ from urllib.parse import quote
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts/geocsv"))
 from create_snapshot import create_snapshot
+from inspect_snapshot import release_component
 
 from mermaid import geocsv
 
@@ -30,7 +31,7 @@ class FetchCompatibility(unittest.TestCase):
             sources = Path(geocsv.__file__).parent
             self.assertEqual({p.name: hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(sources.glob("*.py"))}, baseline["python_sources"])
 
-    def test_real_client_pins_encoded_timestamp_for_memory_and_disk(self):
+    def test_real_client_timestamp_paths_for_memory_and_disk(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             source = root / "processed/serial"
@@ -47,11 +48,14 @@ class FetchCompatibility(unittest.TestCase):
             candidate = create_snapshot(source.parent, root / "work", inventory, instruments=["P0006"])
             manifest = json.loads((candidate / "manifest.json").read_bytes())
             release = manifest["release_id"]
-            prefix = f"/geocsv/releases/{quote(release, safe='')}/"
+            # Keep the exact frozen consumer's historical protocol exercised.
+            baseline = os.environ.get("MERMAID_CONSUMER_BASELINE") == "1"
+            component = quote(release, safe="") if baseline else release_component(release)
+            prefix = f"/geocsv/releases/{component}/"
             responses = {prefix + path.name: path.read_bytes() for path in candidate.iterdir() if path.name != "source_provenance.json"}
             responses["/geocsv/latest.json"] = json.dumps({
                 "release_id": release, "testing_only": True,
-                "manifest": f"releases/{quote(release, safe='')}/manifest.json"}).encode()
+                "manifest": f"releases/{component}/manifest.json"}).encode()
             requests = []
             fixtures = Path(__file__).parent / "fixtures"
             responses["/geocsv/releases/test-001/manifest.json"] = (fixtures / "manifest.json").read_bytes()
@@ -85,9 +89,15 @@ class FetchCompatibility(unittest.TestCase):
                 requests.clear()
                 results = geocsv.fetch("P0006", base_url=base, release=release, output_dir=root / "downloads")
                 self.assertFalse(any(path.endswith("latest.json") for path, _ in requests))
-                self.assertEqual(results[0].path.parent.name, quote(release, safe=""))
+                self.assertEqual(results[0].path.parent.name, component)
                 self.assertEqual(results[0].path.read_bytes(), (candidate / "P0006.geocsv").read_bytes())
                 self.assertTrue(all(encoding == "identity" for _, encoding in requests))
+                if baseline:
+                    responses["/geocsv/latest.json"] = json.dumps({
+                        "release_id": release, "testing_only": True,
+                        "manifest": f"releases/{release_component(release)}/manifest.json"}).encode()
+                    with self.assertRaisesRegex(geocsv.GeoCSVFetchError, "manifest path"):
+                        geocsv.fetch(base_url=base, output_dir=None)
             finally:
                 server.shutdown()
                 server.server_close()

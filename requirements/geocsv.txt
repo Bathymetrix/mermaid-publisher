@@ -1,4 +1,6 @@
-# Fixed consumer baseline; update only with an explicit compatibility review.
+# Historical scientific/download baseline; update only with an explicit review.
+# New hyphenated-path publication requires consumer >= 0.26.0; see
+# docs/geocsv/RELEASE_PATH_REVIEW.md for selecting the current local source.
 mermaid-geocsv[obspy] @ git+https://github.com/Bathymetrix/mermaid-geocsv.git@33ed5ff477b6c44447d472fc8e828b5ae930e0db
 numpy==2.5.3
 pandas==3.0.6

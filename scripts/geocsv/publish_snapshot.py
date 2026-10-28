@@ -11,7 +11,7 @@ from datetime import datetime, timezone
 from urllib.parse import quote, urlsplit
 from urllib.request import Request, urlopen
 
-from inspect_snapshot import fingerprint, git_command, git_repository, json_bytes, read_json, require_external_workspace, verify_candidate
+from inspect_snapshot import fingerprint, git_command, git_repository, json_bytes, read_json, release_component, require_external_workspace, verify_candidate
 from gate_snapshot import AcceptanceError, require_acceptance
 
 
@@ -95,12 +95,21 @@ def verify_https(url, expected):
         raise ValueError(f"public HTTPS checksum mismatch: {url}")
 
 
+def require_fetch_consumer():
+    """Reject the historical download protocol before any object writes."""
+    from mermaid import geocsv
+    if tuple(int(part) for part in geocsv.__version__.split(".")) < (0, 26, 0):
+        raise ValueError("publication with hyphenated release paths requires mermaid-geocsv >= 0.26.0")
+
+
 def _transfer_and_verify(candidate, report, store, base_url, *, object_prefix, accepted=None, report_fingerprint=None, before_activation=None):
     """Publication sequence, reachable from the CLI only after scientific acceptance.
 
     Kept separate to test ordering and failures with an in-memory transport;
     it is not an alternate publication interface or acceptance override.
     """
+    from mermaid import geocsv  # Public API, not private scientific logic.
+    require_fetch_consumer()
     manifest = verify_candidate(candidate)
     candidate = Path(candidate)
     frozen_manifest = (candidate / "manifest.json").read_bytes()
@@ -110,8 +119,8 @@ def _transfer_and_verify(candidate, report, store, base_url, *, object_prefix, a
             or frozen_report != report_fingerprint):
         raise ValueError("candidate/report changed after scientific acceptance")
     release = manifest["release_id"]
-    component = quote(release, safe="")
-    prefix = f"{object_prefix}/releases/{release}/"
+    component = release_component(release)
+    prefix = f"{object_prefix}/releases/{component}/"
     latest_key = f"{object_prefix}/latest.json"
     latest_before = store.get(latest_key)
     already_selected = False
@@ -120,11 +129,14 @@ def _transfer_and_verify(candidate, report, store, base_url, *, object_prefix, a
         etag = latest_before["ETag"]
         with latest_before["Body"] as stream:
             old = json.load(stream)
-        if old.get("testing_only") is not True or old.get("manifest") != f"releases/{quote(old['release_id'], safe='')}/manifest.json":
+        old_id = old.get("release_id")
+        old_component = release_component(old_id)
+        old_paths = {f"releases/{old_component}/manifest.json", f"releases/{quote(old_id, safe='')}/manifest.json"}
+        if old.get("testing_only") is not True or old.get("manifest") not in old_paths:
             raise ValueError("current testing pointer is inconsistent")
-        old_id = old["release_id"]
         already_selected = old_id == release
-        previous = store.get(f"{object_prefix}/releases/{old_id}/manifest.json")
+        previous_component = old_component if old["manifest"] == f"releases/{old_component}/manifest.json" else old_id
+        previous = store.get(f"{object_prefix}/releases/{previous_component}/manifest.json")
         if previous is None:
             raise ValueError("current latest manifest is missing")
         with previous["Body"] as stream:
@@ -148,7 +160,6 @@ def _transfer_and_verify(candidate, report, store, base_url, *, object_prefix, a
         upload_identical_or_new(store, prefix + name, path)
     for name, path in paths:
         verify_https(f"{base_url}releases/{component}/{name}", fingerprint(path))
-    from mermaid import geocsv  # Public API, not private scientific logic.
     with tempfile.TemporaryDirectory(prefix="fetch-check-") as output:
         results = geocsv.fetch(base_url=base_url, release=release, output_dir=output)
         if {item.provenance.instrument_id for item in results} != {entry["instrument_id"] for entry in manifest["files"]}:
@@ -232,8 +243,9 @@ def commit_publication(receipt_path):
     if receipt.get("schema_version") != 1 or receipt.get("testing_only") is not True:
         raise ValueError("unsupported publication receipt")
     base_url, prefix = check_destination(receipt["base_url"], receipt["object_prefix"])
-    from inspect_snapshot import release_component
     component = release_component(receipt["release_id"])
+    if not (workspace / "validation" / component / receipt["report_filename"]).is_file():
+        component = quote(receipt["release_id"], safe="")  # Historical receipt recovery.
     candidate = workspace / "snapshots" / component
     manifest = verify_candidate(candidate)
     if manifest["release_id"] != receipt["release_id"]:

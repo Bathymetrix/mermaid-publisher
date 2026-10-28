@@ -7,6 +7,7 @@ import os
 import shutil
 import tempfile
 from pathlib import Path
+from urllib.parse import quote
 
 from inspect_snapshot import (
     check_instrument, check_manifest, fingerprint, inspect_source_geocsv, json_bytes,
@@ -117,6 +118,12 @@ def create_snapshot(source_root, workspace, inventory_path, previous_manifest=No
         snapshots = collection / "snapshots"
         snapshots.mkdir(parents=True, exist_ok=True)
         destination = snapshots / release_component(release)
+        historical = snapshots / quote(release, safe="")
+        if historical.exists():
+            verify_candidate(historical)
+            if ((historical / "manifest.json").read_bytes() != payload
+                    or (historical / "source_provenance.json").read_bytes() != provenance_payload):
+                raise FileExistsError(f"conflicting immutable historical snapshot: {historical}")
         if destination.exists():
             verify_candidate(destination)
             if (destination / "manifest.json").read_bytes() != payload:

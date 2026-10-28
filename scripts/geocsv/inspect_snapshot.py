@@ -17,7 +17,7 @@ def release_component(value):
     ):
         raise ValueError(f"invalid UTC release timestamp: {value!r}")
     datetime.fromisoformat(value[:19])  # Validate calendar/time, never round fractional identity.
-    return quote(value, safe="")
+    return value.replace(":", "-")
 
 
 def check_instrument(value):
@@ -130,8 +130,8 @@ def verify_candidate(directory):
     entries = check_manifest(manifest)
     if manifest["testing_only"] and (directory.parent.name != "snapshots" or directory.parent.parent.name != "testing"):
         raise ValueError("testing snapshot must be under <workspace>/testing/snapshots/<snapshot ID>/")
-    if directory.name != release_component(manifest["release_id"]):
-        raise ValueError("candidate directory must use the encoded release component")
+    if directory.name not in {release_component(manifest["release_id"]), quote(manifest["release_id"], safe="")}:
+        raise ValueError("candidate directory must use the release component (or historical encoded component)")
     expected = {"manifest.json", "source_provenance.json", *(entry["filename"] for entry in entries)}
     if {path.name for path in directory.iterdir()} != expected:
         raise ValueError("candidate inventory differs from frozen manifest")

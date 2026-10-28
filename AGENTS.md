@@ -19,8 +19,11 @@ tests before changing comparisons; do not widen tolerances to pass a corpus.
 
 `docs/geocsv/CONTRACT.md` is the canonical producer/consumer agreement. A
 publisher change does not implicitly change fetch behavior. Retain fixed
-historical download fixtures and the exact supported consumer baseline. Updating
-either requires an explicit compatibility review. Repository version authority
+historical download fixtures and the exact 0.24.0 historical consumer baseline.
+Hyphenated-path publication/download requires consumer >= 0.26.0, as explicitly
+reviewed in `docs/geocsv/RELEASE_PATH_REVIEW.md`; the initial hosted test set is
+authorized for replacement, including retirement of its old URLs. Updating the
+frozen baseline or fixtures still requires an explicit compatibility review. Repository version authority
 is `VERSION`; report schema versions are independent. No release tags or remote
 publication are implied by a version change.
 

@@ -52,9 +52,9 @@ directory in a dedicated persistent Git archive. The canonical archive is
 ```text
 geocsv/
   testing/
-    snapshots/{encoded ID}/     GeoCSV, manifest.json, source_provenance.json
-    staging/{encoded ID}/       inventory.json, including recordless exclusions
-    validation/{encoded ID}/    exclusive, distinct report attempts
+    snapshots/{release component}/   GeoCSV, manifest.json, source_provenance.json
+    staging/{release component}/     inventory.json, including recordless exclusions
+    validation/{release component}/  exclusive, distinct report attempts
     publications/              successful-publication receipts
 ```
 
@@ -80,10 +80,12 @@ publication receipts and the publication lock share the testing collection.
 Production manifests remain unsupported. Retirement is an operator procedure;
 there is no deletion command in the publisher.
 
-The previous flat local layout requires an explicit move of each testing
+The earlier testing-namespace migration required an explicit move of each testing
 snapshot and its staging/validation evidence into `testing/`. Frozen files must
 remain byte-identical; old paths are rejected. Layout changes do not alter public
-URLs, object keys, manifest/report schemas or scientific limits. Reports bind
+URLs, object keys, manifest/report schemas or scientific limits for that migration.
+The separate 2026-10-28 hyphenated-path change does update URLs and object keys;
+see [its review](RELEASE_PATH_REVIEW.md). Reports bind
 publisher code, so retain old reports and produce fresh evidence after code
 changes. No automatic migration or publication occurs.
 
@@ -199,6 +201,50 @@ or authorize uploads, pointer changes or a publication retry with different
 report bytes. Keep the new local evidence distinct from the report used for
 the original publication.
 
+## Hyphenated paths and testing replacement
+
+Publisher 0.3.0 creates new snapshot/staging directories and R2 keys using
+`release_id.replace(":", "-")`. New validation directories use that same
+component. Manifest `release_id`, GeoCSV `#created`, provenance, arbitrary
+record timestamps and exact payload bytes are unchanged. All fractional digits
+are retained. Existing encoded local archive directories and receipts remain
+readable; creation checks their immutable bytes before creating a new layout.
+The operator does not rename or rewrite historical evidence.
+
+Publication requires mermaid-geocsv >= 0.26.0. The retained requirements pin is
+the frozen historical scientific/download baseline. Prefix create, validate,
+plan and publish commands with `PYTHONPATH=../mermaid-geocsv/src` to select the
+adjacent updated source without changing that installation. Reports bind the
+selected consumer's exact code and version. Old consumers are rejected before
+object writes. See the [compatibility review](RELEASE_PATH_REVIEW.md).
+
+The 2026-10-28 replacement is authorized for the existing P0006/P0045 testing
+scope. Preserve original data/manifest bytes, create fresh scientific evidence,
+verify the new objects and pinned fetch before selecting latest, and retire
+only the prior testing release objects after replacement verification. Old
+testing URLs can end; no legacy serving aliases are promised. Cached old URLs
+are rejected by the updated Worker before cache lookup. Local historical
+archive evidence is retained. Production is outside this operation.
+
+### Recorded public testing destination
+
+| Setting | Value |
+| --- | --- |
+| Collection URL | `https://bathymetrix.com/geocsv/testing/` |
+| Object prefix | `geocsv/testing` |
+| Worker name | `bathymetrix-geocsv` |
+| Worker route | `bathymetrix.com/geocsv/*` |
+| Bucket binding | `GEOCSV` |
+| SDK profile name | `mermaid-geocsv-testing` |
+
+These public service identifiers and the local profile name are retained here
+for later operations. The account-specific S3 endpoint, private bucket/account
+configuration and credentials stay outside the public checkout. Resolve
+credentials through the SDK provider; never print or copy them. Supply the
+private endpoint/bucket through `GEOCSV_S3_ENDPOINT` and `GEOCSV_BUCKET` for
+the existing CLI. No deployment configuration locations or private values are
+recorded in this repository.
+
 ## Publication and recording
 
 The publisher gates current evidence, uploads immutable payloads, then manifest
@@ -235,7 +281,7 @@ reuse objects; conflicts never overwrite them.
 
 ## Status and verification
 
-Publisher 0.2.0/report schema 3 preserve scientific comparison rules from the
+Publisher 0.3.0/report schema 3 preserve scientific comparison rules from the
 website's schema-2 workflow. Historical 43,365-pair acceptance is retained as
 historical evidence, not reused. Fresh schema-3 validation of every original pair
 in the frozen instrument scope is required for each candidate. Scientific
@@ -255,5 +301,8 @@ archive. See the [publication findings](SCHEMA3_FINDINGS.md#initial-hosted-testi
 DNSSEC restoration and post-activation DNS, HTTPS/download and email checks
 subsequently passed on 2026-10-26; see the
 [restoration findings](INFRASTRUCTURE_PLAN.md#dnssec-restoration--2026-10-26).
-Full-corpus licensing, further uploads and production activation remain separate
-outstanding decisions. Canonical source inputs were not modified.
+The authorized 2026-10-28 path replacement subsequently passed fresh scientific
+acceptance and hosted verification, with the same data/manifest bytes and the
+new consumer. Its previous testing objects/URLs were retired; see the
+[path review](RELEASE_PATH_REVIEW.md). Full-corpus licensing, further uploads
+and production activation remain separate outstanding decisions. Canonical source inputs were not modified.

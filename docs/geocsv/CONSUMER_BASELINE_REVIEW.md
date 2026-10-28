@@ -2,7 +2,7 @@
 
 ## Decision and source comparison
 
-The active consumer baseline remains `mermaid-geocsv` 0.24.0 and advances from
+The historical scientific/download consumer baseline remains `mermaid-geocsv` 0.24.0 and advances from
 `c1eb805e420f7f8d4bfb8c6f737316c9f5766534` to
 `33ed5ff477b6c44447d472fc8e828b5ae930e0db`.
 
@@ -114,3 +114,12 @@ verification and fingerprints that code in schema-3 evidence. See the
 [SAC verification migration inventory](SAC_VERIFICATION.md) for scope and
 local checks. Existing corpus reports and hosted objects remain historical;
 no fresh corpus acceptance or deployment is claimed for this refactor.
+
+## Hyphenated path protocol — 2026-10-28
+
+The [explicit path review](RELEASE_PATH_REVIEW.md) keeps this exact 0.24.0
+pin, source fingerprints and historical fixtures unchanged. It separates their
+historical/scientific coverage from new timestamped publication/download, which
+requires consumer >= 0.26.0. The initial hosted test set is authorized for
+replacement; old testing URLs may be retired. This is an intentional path
+compatibility break, not a scientific API or report-schema change.

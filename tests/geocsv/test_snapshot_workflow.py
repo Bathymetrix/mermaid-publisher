@@ -17,6 +17,7 @@ from inspect_snapshot import fingerprint, json_bytes, release_component, verify_
 import publish_snapshot as publisher
 
 RELEASE = "2026-10-21T22:48:33.277000001Z"
+COMPONENT = "2026-10-21T22-48-33.277000001Z"
 
 
 def geocsv(instrument="P0006", created=RELEASE, note=""):
@@ -43,7 +44,7 @@ class Snapshots(unittest.TestCase):
     def test_exact_copy_deterministic_idempotent_inventory(self):
         source = self.file.read_bytes()
         result = self.create()
-        self.assertEqual(result.relative_to(self.workspace.resolve()), Path("testing/snapshots/2026-10-21T22%3A48%3A33.277000001Z"))
+        self.assertEqual(result.relative_to(self.workspace.resolve()), Path("testing/snapshots/2026-10-21T22-48-33.277000001Z"))
         self.assertEqual((result / "P0006.geocsv").read_bytes(), source)
         self.assertEqual(self.file.read_bytes(), source)
         manifest = (result / "manifest.json").read_bytes()
@@ -87,6 +88,18 @@ class Snapshots(unittest.TestCase):
         with self.assertRaises(FileExistsError):
             self.create()
         self.assertEqual((first / "manifest.json").read_bytes(), frozen)
+
+    def test_historical_layout_remains_readable_and_cannot_hide_identity_conflicts(self):
+        from urllib.parse import quote
+        first = self.create()
+        historical = first.with_name(quote(RELEASE, safe=""))
+        first.rename(historical)
+        self.assertEqual(verify_candidate(historical)["release_id"], RELEASE)
+        current = self.create()
+        self.assertEqual((current / "manifest.json").read_bytes(), (historical / "manifest.json").read_bytes())
+        self.file.write_bytes(geocsv(note="#new: comment\n"))
+        with self.assertRaisesRegex(FileExistsError, "historical snapshot"):
+            self.create()
 
     def test_station_mismatch_and_multiple_ids_raise(self):
         for content in (geocsv("P0007"), geocsv() + b"Measurement:GPS,P0007\n"):
@@ -210,7 +223,7 @@ class Publication(unittest.TestCase):
         self.store = MemoryStore()
         manifest_bytes = (self.candidate / "manifest.json").read_bytes()
         result = SimpleNamespace(provenance=SimpleNamespace(instrument_id="P0006", manifest=manifest_bytes))
-        self.client = SimpleNamespace(geocsv=SimpleNamespace(fetch=lambda **kwargs: [result]))
+        self.client = SimpleNamespace(geocsv=SimpleNamespace(__version__="0.26.0", fetch=lambda **kwargs: [result]))
         self.patches = [patch.object(publisher, "verify_https"),
                         patch.dict(sys.modules, {"mermaid": self.client})]
         self.https = self.patches[0].start()
@@ -226,6 +239,24 @@ class Publication(unittest.TestCase):
             with self.assertRaises(publisher.AcceptanceUnavailable):
                 publisher.require_scientific_acceptance(self.candidate, report)
         self.assertEqual(self.store.writes, [])
+
+    def test_old_fetch_consumer_stops_before_remote_writes(self):
+        self.client.geocsv.__version__ = "0.24.0"
+        with self.assertRaisesRegex(ValueError, ">= 0.26.0"):
+            self.transfer()
+        self.assertEqual(self.store.writes, [])
+
+    def test_historical_latest_can_be_replaced_without_rewriting_its_objects(self):
+        from urllib.parse import quote
+        old_prefix = f"geocsv/testing/releases/{RELEASE}/"
+        old_manifest = (self.candidate / "manifest.json").read_bytes()
+        self.store.data[old_prefix + "manifest.json"] = old_manifest
+        self.store.data["geocsv/testing/latest.json"] = json_bytes({
+            "release_id": RELEASE, "testing_only": True,
+            "manifest": f"releases/{quote(RELEASE, safe='')}/manifest.json"})
+        self.transfer()
+        self.assertEqual(self.store.data[old_prefix + "manifest.json"], old_manifest)
+        self.assertFalse(any(key.startswith(old_prefix) for key in self.store.writes))
 
     def test_cli_plan_is_read_only_and_publication_requires_full_evidence(self):
         script = Path(publisher.__file__)
@@ -263,14 +294,18 @@ class Publication(unittest.TestCase):
         self.assertTrue(self.store.writes[0].endswith("P0006.geocsv"))
         self.assertTrue(self.store.writes[1].endswith("manifest.json"))
         self.assertEqual(self.store.writes[-1], "geocsv/testing/latest.json")
-        self.assertIn(RELEASE, self.store.writes[0])
-        self.assertIn("%3A", self.https.call_args_list[0].args[0])
+        self.assertIn(COMPONENT, self.store.writes[0])
+        self.assertIn(COMPONENT, self.https.call_args_list[0].args[0])
+        self.assertNotIn("%", self.https.call_args_list[0].args[0])
+        latest = json.loads(self.store.data["geocsv/testing/latest.json"])
+        self.assertEqual(latest["release_id"], RELEASE)
+        self.assertEqual(latest["manifest"], f"releases/{COMPONENT}/manifest.json")
         self.store.writes.clear()
         self.transfer()
         self.assertEqual(self.store.writes, ["geocsv/testing/latest.json"])
 
     def test_upload_failure_leaves_latest_absent_and_retry_resumes(self):
-        self.store.fail_on = f"geocsv/testing/releases/{RELEASE}/manifest.json"
+        self.store.fail_on = f"geocsv/testing/releases/{COMPONENT}/manifest.json"
         with self.assertRaises(OSError):
             self.transfer()
         self.assertNotIn("geocsv/testing/latest.json", self.store.data)
@@ -279,13 +314,13 @@ class Publication(unittest.TestCase):
         self.assertIn("geocsv/testing/latest.json", self.store.data)
 
     def test_conflict_preflight_writes_nothing(self):
-        self.store.data[f"geocsv/testing/releases/{RELEASE}/manifest.json"] = b"different manifest"
+        self.store.data[f"geocsv/testing/releases/{COMPONENT}/manifest.json"] = b"different manifest"
         with self.assertRaises(FileExistsError):
             self.transfer()
         self.assertEqual(self.store.writes, [])
 
     def test_unexpected_remote_inventory_rejected(self):
-        self.store.data[f"geocsv/testing/releases/{RELEASE}/other.geocsv"] = b"different inventory"
+        self.store.data[f"geocsv/testing/releases/{COMPONENT}/other.geocsv"] = b"different inventory"
         with self.assertRaises(FileExistsError):
             self.transfer()
         self.assertEqual(self.store.writes, [])

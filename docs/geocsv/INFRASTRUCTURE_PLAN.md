@@ -1,5 +1,10 @@
 # GeoCSV testing infrastructure plan
 
+The dated findings below retain their original paths and software provenance.
+The 2026-10-28 [hyphenated-path replacement](RELEASE_PATH_REVIEW.md) supersedes
+the original hosted testing paths; their encoded URLs have been retired.
+Historical local evidence is retained.
+
 This checklist tracks preparation and verification of the isolated GeoCSV
 testing service. The production collection remains inactive. Deployment and
 uploads require separate explicit authorization. Credentials and private

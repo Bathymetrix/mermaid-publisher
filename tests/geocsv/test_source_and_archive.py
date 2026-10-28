@@ -129,6 +129,20 @@ class PublicationRecording(unittest.TestCase):
         result = subprocess.run(command, capture_output=True, text=True)
         self.assertEqual(result.returncode, 0, result.stderr)
 
+    def test_historical_encoded_archive_receipt_can_still_be_recorded(self):
+        from urllib.parse import quote
+        component = quote(json.loads((self.candidate / "manifest.json").read_bytes())["release_id"], safe="")
+        original_name = self.candidate.name
+        self.candidate = self.candidate.rename(self.candidate.with_name(component))
+        report_directory = self.report.parent.rename(self.report.parent.with_name(component))
+        self.report = report_directory / self.report.name
+        staging = self.workspace / "testing/staging" / original_name
+        staging.rename(staging.with_name(component))
+        receipt = self.record()
+        publisher.commit_publication(receipt)
+        committed = git(self.archive, "ls-tree", "-r", "--name-only", "HEAD")
+        self.assertIn(f"snapshots/{component}/manifest.json", committed)
+
     def test_tampered_provenance_is_rejected_before_local_recording(self):
         receipt = self.record()
         (self.candidate / "source_provenance.json").write_bytes(json_bytes({"schema_version": 1, "git": {"commit": "f" * 40, "source_subdirectory": "."}}))
@@ -191,7 +205,7 @@ class PublicationCommand(unittest.TestCase):
         from mermaid import geocsv
         manifest = (self.candidate / "manifest.json").read_bytes()
         result = SimpleNamespace(provenance=SimpleNamespace(instrument_id="P0006", manifest=manifest))
-        with patch.object(sys, "argv", self.command), patch.object(publisher, "R2Store", return_value=self.store), patch.object(publisher, "verify_https"), patch.object(geocsv, "fetch", return_value=[result]):
+        with patch.object(sys, "argv", self.command), patch.object(publisher, "R2Store", return_value=self.store), patch.object(publisher, "verify_https"), patch.object(geocsv, "fetch", return_value=[result]), patch.object(publisher, "require_fetch_consumer"):
             publisher.main()
 
     def test_real_gate_publication_and_git_record_are_connected(self):
@@ -226,7 +240,7 @@ class PublicationCommand(unittest.TestCase):
         self.command[self.command.index("--candidate") + 1] = str(self.candidate)
         self.command[self.command.index("--report") + 1] = str(self.report_path)
         self.invoke()
-        manifest = json.loads(self.store.data[f"geocsv/testing/releases/{report['release_id']}/manifest.json"])
+        manifest = json.loads(self.store.data[f"geocsv/testing/releases/{report['release_id'].replace(':', '-')}/manifest.json"])
         self.assertEqual([entry["instrument_id"] for entry in manifest["files"]], ["P0006"])
         self.assertFalse(any("P0045" in key for key in self.store.data))
         self.assertEqual([item["instrument_id"] for item in report["instruments"]], ["P0006"])
@@ -252,7 +266,7 @@ class PublicationCommand(unittest.TestCase):
         def verify(url, expected):
             if url.endswith("latest.json"):
                 raise OSError("final confirmation failed")
-        with patch.object(sys, "argv", self.command), patch.object(publisher, "R2Store", return_value=self.store), patch.object(publisher, "verify_https", side_effect=verify), patch.object(geocsv, "fetch", return_value=[result]):
+        with patch.object(sys, "argv", self.command), patch.object(publisher, "R2Store", return_value=self.store), patch.object(publisher, "verify_https", side_effect=verify), patch.object(geocsv, "fetch", return_value=[result]), patch.object(publisher, "require_fetch_consumer"):
             with self.assertRaises(SystemExit) as caught:
                 publisher.main()
         self.assertEqual(caught.exception.code, 2)

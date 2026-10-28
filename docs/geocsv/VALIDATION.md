@@ -44,7 +44,7 @@ independently after association/export. SAC headers never supply source defaults
 matching hints, missing positions or missing pressure.
 
 Recordless GeoCSV sources are excluded before payload staging and documented
-in the creator's local-only `staging/<encoded release>/inventory.json`. That
+in the creator's local-only `staging/<release component>/inventory.json`. That
 sidecar covers every in-scope source instrument, including explicit exclusion reasons.
 The validator and publisher verify its exact hash, recordless status, and complete
 source accounting; any original waveforms in an excluded directory block the
