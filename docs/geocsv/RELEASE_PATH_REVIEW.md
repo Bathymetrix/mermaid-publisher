@@ -102,7 +102,13 @@ with `PYTHONPATH`; neither virtual environment was modified. Exact frozen
 baseline source was extracted to temporary storage for verification without
 changing the pin or fixtures.
 
-Worker/data replacement is deployed. Software repositories remain uncommitted
-and unpushed; updated landing-page wording is local pending the normal site
-publication workflow. These source version bumps do not constitute released
-packages or authorize tags, production publication or additional uploads.
+Worker/data replacement is deployed. The coordinated source changes are
+recorded in these commits:
+
+- `mermaid-publisher`: `4ed7086972260a837f6635b50bf334fa4bce23c9`.
+- `mermaid-geocsv`: `6f899ff898ec0aef3ee9e9d88986f83594ba9153`.
+- `bathymetrix-site`: `8012fdcbaae0226b38a57814fe49a2d61daa0a0c`.
+
+These commits do not establish published packages or deployment of the updated
+landing-page wording. Source version bumps do not authorize tags, production
+publication or additional uploads.
