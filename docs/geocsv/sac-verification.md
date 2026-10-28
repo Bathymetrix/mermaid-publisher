@@ -7,7 +7,7 @@ this publisher owns verification of final waveforms and scratch SAC exports.
 Publisher version at that refactor: 0.2.0. The SAC refactor left report schema 3,
 scientific limits and the manifest/download protocol unchanged. Publisher 0.3.0
 subsequently changes only release path components under the
-[2026-10-28 path review](RELEASE_PATH_REVIEW.md); these scientific checks remain.
+[2026-10-28 path review](release-path-review.md); these scientific checks remain.
 
 ## Consumer contract
 

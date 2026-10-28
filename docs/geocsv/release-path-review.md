@@ -59,7 +59,7 @@ The successful replacement includes a publication receipt and scoped local
 archive commit. Software repositories are not committed or pushed automatically.
 
 Public destination and service identifiers are recorded in
-[the operator workflow](WORKFLOW.md#recorded-public-testing-destination).
+[the operator workflow](workflow.md#recorded-public-testing-destination).
 Credentials and private account-specific deployment configuration are excluded.
 
 ## Verification and deployment evidence

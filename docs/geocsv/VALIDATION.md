@@ -94,11 +94,11 @@ pressure-to-depth model. REQ source quality D may omit pressure; depth remains
 undefined, without borrowing another record's value. Missing DET pressure fails
 during requested header creation. Scientific projection remains in the package;
 independent verification and all former exporter guards are retained in
-[`_verify_sac.py`](SAC_VERIFICATION.md).
+[`_verify_sac.py`](sac-verification.md).
 
 The report also fingerprints `_verify_sac.py`; changing its checks invalidates
 old acceptance evidence without changing schema 3 or scientific tolerances.
-The [migration inventory](SAC_VERIFICATION.md#verification-migration-inventory)
+The [migration inventory](sac-verification.md#verification-migration-inventory)
 accounts for every former exporter test.
 
 No whole-SAC-header or byte equivalence is asserted. Calibration, instrument,

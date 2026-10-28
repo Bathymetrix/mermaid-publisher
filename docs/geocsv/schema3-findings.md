@@ -1,7 +1,7 @@
 # Fresh schema-3 validation findings — 2026-10-23
 
 The dated findings below retain their original paths and software provenance.
-The 2026-10-28 [hyphenated-path replacement](RELEASE_PATH_REVIEW.md) supersedes
+The 2026-10-28 [hyphenated-path replacement](release-path-review.md) supersedes
 the original hosted testing paths; their encoded URLs have been retired.
 Historical local evidence is retained.
 
@@ -60,7 +60,7 @@ reference intervals differed by zero ULP for 32,400 full-corpus pairs and one
 ULP for 10,965; selected-candidate counts were 2,415 and 877. The maximum
 interval difference was 7.450580596923828e-9 seconds. Native first-sample times
 matched exactly; independent-reference differences were at most 1,000 ns.
-These are the unchanged [versioned comparison rules](VALIDATION.md).
+These are the unchanged [versioned comparison rules](validation.md).
 
 ## Initial immutable evidence before the local layout change
 
@@ -167,7 +167,7 @@ operational location, outside the software checkouts. Initial testing artifacts
 remain retireable only through separately authorized cleanup. This publication
 does not authorize production promotion, further uploads or DNS changes;
 DNSSEC restoration was separately completed and verified later on 2026-10-26;
-see the [restoration findings](INFRASTRUCTURE_PLAN.md#dnssec-restoration--2026-10-26).
+see the [restoration findings](infrastructure-plan.md#dnssec-restoration--2026-10-26).
 
 ## Local consumer-baseline revalidation — 2026-10-26
 
@@ -179,7 +179,7 @@ packaging configuration; its later changes affect hosting documentation only.
 Both revisions passed all 55 publisher compatibility tests in their respective
 CI modes. The publisher `.venv` was restored to the separate, noneditable frozen
 installation before scientific validation. See the
-[baseline review](CONSUMER_BASELINE_REVIEW.md#completed-local-acceptance-refresh).
+[baseline review](consumer-baseline-review.md#completed-local-acceptance-refresh).
 
 The original published acceptance report still records consumer `c1eb805`.
 The current gate correctly rejected it for a new acceptance decision because

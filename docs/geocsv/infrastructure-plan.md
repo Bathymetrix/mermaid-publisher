@@ -1,7 +1,7 @@
 # GeoCSV testing infrastructure plan
 
 The dated findings below retain their original paths and software provenance.
-The 2026-10-28 [hyphenated-path replacement](RELEASE_PATH_REVIEW.md) supersedes
+The 2026-10-28 [hyphenated-path replacement](release-path-review.md) supersedes
 the original hosted testing paths; their encoded URLs have been retired.
 Historical local evidence is retained.
 
@@ -144,7 +144,7 @@ latest pointer are present; the production pointer remains absent. Complete
 transport, cache, fetch and scientific verification passed, including a fresh
 3,292-pair rerun using hosted downloads. The local archive contains the initial
 candidate commit and a scoped publication receipt commit. See
-[publication findings](SCHEMA3_FINDINGS.md#initial-hosted-testing-publication--2026-10-26).
+[publication findings](schema3-findings.md#initial-hosted-testing-publication--2026-10-26).
 No source or DNS changes were made during publication. The separately
 authorized DNSSEC restoration was completed afterward as recorded below.
 
@@ -174,7 +174,7 @@ have zero failed, missing, unsupported or unexamined pairs, and both passed
 the current read-only publication gate. Their manifests and reports are
 distinct. No original waveform archives, full-corpus payloads or full-corpus
 reports were copied into the publication archive. No uploads or archive
-commits were performed. See [fresh schema-3 findings](SCHEMA3_FINDINGS.md).
+commits were performed. See [fresh schema-3 findings](schema3-findings.md).
 
 The local layout now derives a `testing/` collection from the manifest flag.
 Existing testing artifacts were explicitly moved without byte changes. Reports

@@ -5,12 +5,12 @@ historical scientific/download consumer baseline is mermaid-geocsv 0.24.0 at com
 `33ed5ff477b6c44447d472fc8e828b5ae930e0db`. Owning this document does not permit
 silent producer/consumer changes: retain historical fixtures and review
 protocol changes explicitly across repositories. The authorized
-[2026-10-28 path review](RELEASE_PATH_REVIEW.md) requires consumer >= 0.26.0
+[2026-10-28 path review](release-path-review.md) requires consumer >= 0.26.0
 for the replacement timestamped testing collection. The frozen baseline is
 retained for historical downloads and scientific compatibility, not the new
 path protocol.
 
-The [2026-10-26 compatibility review](CONSUMER_BASELINE_REVIEW.md) adopts this
+The [2026-10-26 compatibility review](consumer-baseline-review.md) adopts this
 revision after an identical reader-module rename and import updates. The
 original baseline fingerprints and historical download fixtures remain retained.
 Existing archived reports describe their original software; future publication
@@ -34,7 +34,7 @@ hyphenated path protocol; manifest fields and scientific release IDs are unchang
 Consumer 0.25.0 removes its public writer and adds `create_sac_header`. This
 scientific API migration does not change the fixed fetch baseline, historical
 fixtures, manifests, URLs or byte semantics. The publisher supports both
-consumer paths; [SAC verification](SAC_VERIFICATION.md) records every retained
+consumer paths; [SAC verification](sac-verification.md) records every retained
 check. Evidence remains bound to the exact installed software.
 
 ## Current publication phase: testing only
@@ -50,7 +50,7 @@ P0006/P0045 testing snapshot `2026-10-21T22:48:33.277Z` was published on
 2026-10-26. On 2026-10-28 the same unchanged data/manifest were republished
 under hyphenated paths and selected by testing latest, with fresh scientific
 evidence. The four old testing objects and encoded URLs were retired. See the
-[path review and replacement evidence](RELEASE_PATH_REVIEW.md). Production
+[path review and replacement evidence](release-path-review.md). Production
 remains inactive.
 The public landing page identifies that scope, provides the MH network DOI
 (10.7914/SN/MH), and states that initial workflow tests may be retired after
@@ -216,13 +216,13 @@ Reports bind the exact frozen manifest and staged file inventory, full source
 waveform fingerprints and pair accounting, scientific checks/limits/results,
 failures/maxima, and package/code/dependency versions. Acceptance rechecks inputs
 and complete coverage rather than trusting a success flag. See
-[the concrete report protocol](VALIDATION.md). Scientific
+[the concrete report protocol](validation.md). Scientific
 acceptance requires a passing complete run over each candidate's frozen
 instrument scope. A full-corpus report cannot accept a different selected
 candidate. The historical
 2026-10-22 version-2 run passed all 43,365 original waveform pairs and its report
 passed the publisher's acceptance gate; see
-[archive findings](ARCHIVE_FINDINGS.md).
+[archive findings](archive-findings.md).
 
 An accepted report may be stored as `validation.json` outside the manifest's
 GeoCSV files list. It binds the manifest; the manifest never depends on its hash.
@@ -253,4 +253,4 @@ A successful remote publication creates an immutable local receipt and a
 scoped archive Git commit. Receipts and inventories are not public release
 objects. Publication success and local recording failure are separate outcomes;
 `--record-only` finishes recording without network writes. No automatic pushes
-are performed. See [the workflow](WORKFLOW.md).
+are performed. See [the workflow](workflow.md).

@@ -98,7 +98,7 @@ validation`, as expected. Its bytes remain unchanged. A distinct, exclusively
 created local report then passed every original pair for the existing
 P0006/P0045 candidate and passed `publish_snapshot.py --plan`. No creation or
 full-corpus run was performed. The new report, hashes and pair accounting are
-recorded in the [local revalidation findings](SCHEMA3_FINDINGS.md#local-consumer-baseline-revalidation--2026-10-26).
+recorded in the [local revalidation findings](schema3-findings.md#local-consumer-baseline-revalidation--2026-10-26).
 
 This refresh adds local evidence only. It does not replace the original published
 report or alter hosted objects, pointers, archive history, hosting or DNS.
@@ -111,13 +111,13 @@ protocol change. The supported frozen baseline, requirement pin, source
 fingerprints and historical download fixtures remain unchanged. Publisher
 0.2.0 supports both paths, retains every exporter guard in its internal
 verification and fingerprints that code in schema-3 evidence. See the
-[SAC verification migration inventory](SAC_VERIFICATION.md) for scope and
+[SAC verification migration inventory](sac-verification.md) for scope and
 local checks. Existing corpus reports and hosted objects remain historical;
 no fresh corpus acceptance or deployment is claimed for this refactor.
 
 ## Hyphenated path protocol — 2026-10-28
 
-The [explicit path review](RELEASE_PATH_REVIEW.md) keeps this exact 0.24.0
+The [explicit path review](release-path-review.md) keeps this exact 0.24.0
 pin, source fingerprints and historical fixtures unchanged. It separates their
 historical/scientific coverage from new timestamped publication/download, which
 requires consumer >= 0.26.0. The initial hosted test set is authorized for

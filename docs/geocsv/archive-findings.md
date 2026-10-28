@@ -1,12 +1,12 @@
 # Full archive validation findings — 2026-10-22
 
 The dated findings below retain their original paths and software provenance.
-The 2026-10-28 [hyphenated-path replacement](RELEASE_PATH_REVIEW.md) supersedes
+The 2026-10-28 [hyphenated-path replacement](release-path-review.md) supersedes
 the original hosted testing paths; their encoded URLs have been retired.
 Historical local evidence is retained.
 
 These are historical schema-2 findings. Fresh publisher schema-3 results are
-recorded separately in [the 2026-10-23 findings](SCHEMA3_FINDINGS.md).
+recorded separately in [the 2026-10-23 findings](schema3-findings.md).
 
 Release ID: `2026-10-21T22:48:33.277Z`.
 

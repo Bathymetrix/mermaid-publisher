@@ -31,7 +31,7 @@ flowchart TB
 Current consumers supply fresh SAC station location headers at association;
 ObsPy supplies writing and the publisher verifies final-waveform consistency,
 storage and round trips. The frozen baseline remains supported. See the
-[SAC verification inventory](SAC_VERIFICATION.md).
+[SAC verification inventory](sac-verification.md).
 
 ## Sources and archive
 
@@ -85,7 +85,7 @@ snapshot and its staging/validation evidence into `testing/`. Frozen files must
 remain byte-identical; old paths are rejected. Layout changes do not alter public
 URLs, object keys, manifest/report schemas or scientific limits for that migration.
 The separate 2026-10-28 hyphenated-path change does update URLs and object keys;
-see [its review](RELEASE_PATH_REVIEW.md). Reports bind
+see [its review](release-path-review.md). Reports bind
 publisher code, so retain old reports and produce fresh evidence after code
 changes. No automatic migration or publication occurs.
 
@@ -216,7 +216,7 @@ the frozen historical scientific/download baseline. Prefix create, validate,
 plan and publish commands with `PYTHONPATH=../mermaid-geocsv/src` to select the
 adjacent updated source without changing that installation. Reports bind the
 selected consumer's exact code and version. Old consumers are rejected before
-object writes. See the [compatibility review](RELEASE_PATH_REVIEW.md).
+object writes. See the [compatibility review](release-path-review.md).
 
 The 2026-10-28 replacement is authorized for the existing P0006/P0045 testing
 scope. Preserve original data/manifest bytes, create fresh scientific evidence,
@@ -297,12 +297,12 @@ rejection, exact HTTPS bytes, cache hits and controls, latest/pinned fetch,
 one/all instruments, memory/disk, local reuse and download provenance passed.
 A complete read/associate/write_sac rerun using hosted downloads passed all
 3,292 original waveform pairs. The receipt and scoped commit are in the local
-archive. See the [publication findings](SCHEMA3_FINDINGS.md#initial-hosted-testing-publication--2026-10-26).
+archive. See the [publication findings](schema3-findings.md#initial-hosted-testing-publication--2026-10-26).
 DNSSEC restoration and post-activation DNS, HTTPS/download and email checks
 subsequently passed on 2026-10-26; see the
-[restoration findings](INFRASTRUCTURE_PLAN.md#dnssec-restoration--2026-10-26).
+[restoration findings](infrastructure-plan.md#dnssec-restoration--2026-10-26).
 The authorized 2026-10-28 path replacement subsequently passed fresh scientific
 acceptance and hosted verification, with the same data/manifest bytes and the
 new consumer. Its previous testing objects/URLs were retired; see the
-[path review](RELEASE_PATH_REVIEW.md). Full-corpus licensing, further uploads
+[path review](release-path-review.md). Full-corpus licensing, further uploads
 and production activation remain separate outstanding decisions. Canonical source inputs were not modified.
