@@ -59,8 +59,9 @@ recordless-exclusion count, not the excluded payloads.
 ## Scientific checks and limits
 
 The fixed limits reproduce the package's documented original-segment contract
-and `docs/tutorials/WRITE_SAC.md` comparisons. Limits are recorded in every report
-and are not configurable from the CLI. Failures do not trigger wider tolerances.
+and [SAC tutorial](../../../mermaid-geocsv/tutorials/write-sac.md) comparisons.
+Limits are recorded in every report and are not configurable from the CLI.
+Failures do not trigger wider tolerances.
 The one-ULP representation-check pattern is established in the package's
 `tests/test_earthscope_response.py` and its association fixture documentation.
 Version 2 introduced that pattern for independent SAC intervals; version 3

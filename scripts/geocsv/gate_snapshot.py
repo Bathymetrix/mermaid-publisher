@@ -52,7 +52,11 @@ def software_versions():
     versions["mermaid-geocsv_distribution"] = versions["mermaid-geocsv"]
     versions["mermaid-geocsv"] = geocsv.__version__
     versions["python"] = ".".join(map(str, sys.version_info[:3]))
-    versions["mermaid-publisher"] = (Path(__file__).resolve().parents[2] / "version").read_text().strip()
+    repository_root = Path(__file__).resolve().parents[2]
+    version_path = repository_root / "version"
+    if not version_path.exists():
+        version_path = repository_root / "VERSION"
+    versions["mermaid-publisher"] = version_path.read_text().strip()
     versions["publisher_code_sha256"] = {
         name: fingerprint(Path(__file__).parent / name)[1] for name in (
             "inspect_snapshot.py", "create_snapshot.py", "validate_snapshot.py",
