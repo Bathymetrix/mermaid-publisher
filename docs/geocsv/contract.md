@@ -278,6 +278,14 @@ are performed. See [the workflow](workflow.md).
 
 ## Locally implemented schema 1.0.0 migration
 
+Publisher 0.4.1 requires the exact first-line schema 1.0.0 declaration and a
+literal `#created: ` prefix with a six-digit UTC timestamp during creation and
+candidate inspection, including recordless exclusions. Duplicate schema
+declarations and comments after the column header raise; quoted continuation
+lines remain CSV data. Full payload parsing remains consumer-owned and is
+required during scientific validation. The transport release-ID grammar above
+is unchanged; it does not relax new payload requirements or add legacy support.
+
 Publisher 0.4.0 selects `Derivation:Recording:` rows and reads `Time`. Scientific
 validation requires consumer >= 0.27.0. Final-waveform checks verify the source's
 explicit Recording Elevation, including SAC `stel`; no elevation default is used.

@@ -44,6 +44,13 @@ storage and round trips. Historical consumer/exporter compatibility is removed. 
 
 ## Sources and archive
 
+Only MERMAID GeoCSV schema 1.0.0 is accepted. Creation and candidate inspection
+require its exact first-line declaration and literal six-digit UTC `#created`
+declaration, including recordless sources. Duplicate schema declarations and
+comments after the column header raise; quoted multiline values remain data.
+Creation performs an identity preflight, not full payload validation: the
+consumer's parser and exhaustive scientific checks must pass before publication.
+
 `$MERMAID/processed` is canonical and protected. Never write to it. A source may
 be an ordinary directory. If it is inside a Git working tree, require a clean
 entire repository: no staged, unstaged or nonignored untracked changes. Record

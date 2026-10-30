@@ -5,7 +5,7 @@ Create, validate, gate and publish immutable MERMAID data snapshots.
 This repository contains maintainer tools. GeoCSV is the only implemented
 workflow, under `scripts/geocsv/`. Future data types can use sibling directories.
 Scientific GeoCSV APIs remain in `mermaid-geocsv`; Bathymetrix hosting remains in
-`bathymetrix-site`. Repository version: **0.4.0**, independently maintained in
+`bathymetrix-site`. Repository version: **0.4.1**, independently maintained in
 `version`. No formal software or production data release has been published.
 
 ## Local installation
@@ -19,8 +19,10 @@ released, use the local checkout in the same pip invocation:
 .venv/bin/python -m pip check
 ```
 
-Publisher 0.4.0 requires mermaid-geocsv >= 0.27.0 and supports only payload
-schema 1.0.0 for scientific validation. Historical consumer pins and fixture
+Publisher 0.4.1 requires mermaid-geocsv >= 0.27.0 and supports only payload
+schema 1.0.0. Creation and candidate inspection require its exact first-line
+declaration and six-digit UTC `#created`; full parsing and scientific validation
+use the consumer. Historical consumer pins and fixture
 bytes remain evidence, without an active legacy reader/exporter path. Installed
 versions and loaded source hashes are bound into every fresh report.
 

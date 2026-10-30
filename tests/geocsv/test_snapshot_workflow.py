@@ -74,6 +74,51 @@ class Snapshots(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "mixed"):
             self.create()
 
+    def test_creation_requires_schema_1_declaration_including_recordless_sources(self):
+        schema = b"# MERMAID GeoCSV schema: 1.0.0\n"
+        for content in (geocsv(), HEADER.encode()):
+            for invalid in (content.replace(schema, b""),
+                            content.replace(schema, b"# MERMAID GeoCSV schema: 0.9.0\n"),
+                            content.replace(schema, schema + schema),
+                            b"#description: misplaced schema\n" + content):
+                with self.subTest(content=invalid), self.assertRaisesRegex(ValueError, "schema"):
+                    self.file.write_bytes(invalid)
+                    self.create()
+        self.assertFalse((self.workspace / "testing/snapshots").exists())
+
+    def test_payload_created_requires_exact_six_digit_declaration(self):
+        for value in (RELEASE.replace(".277000", ""), RELEASE.replace(".277000", ".277"),
+                      RELEASE.replace(".277000", ".277000001")):
+            # Transport release identities retain their independent, wider grammar.
+            self.assertEqual(release_component(value), value.replace(":", "-"))
+            self.file.write_bytes(geocsv(created=value))
+            with self.subTest(value=value), self.assertRaisesRegex(ValueError, "six-digit"):
+                self.create()
+        for declaration in (b"#created:  ", b"#created:", b"# created: "):
+            self.file.write_bytes(geocsv().replace(b"#created: ", declaration))
+            with self.subTest(declaration=declaration), self.assertRaisesRegex(ValueError, "literal #created"):
+                self.create()
+
+    def test_candidate_schema_rechecked_even_with_matching_hash(self):
+        candidate = self.create()
+        payload = candidate / "P0006.geocsv"
+        payload.write_bytes(payload.read_bytes().replace(b"schema: 1.0.0", b"schema: 0.9.0"))
+        manifest = json.loads((candidate / "manifest.json").read_bytes())
+        size, checksum = fingerprint(payload)
+        manifest["files"][0].update(size_bytes=size, sha256=checksum)
+        (candidate / "manifest.json").write_bytes(json_bytes(manifest))
+        with self.assertRaisesRegex(ValueError, "schema"):
+            verify_candidate(candidate)
+
+    def test_comment_records_rejected_but_quoted_continuations_preserved(self):
+        self.file.write_bytes(geocsv() + b"#description: late comment\n")
+        with self.assertRaisesRegex(ValueError, "after the column header"):
+            self.create()
+        content = geocsv().replace(b"MERMAID_test", b'"MERMAID_test\n# quoted continuation"')
+        self.file.write_bytes(content)
+        candidate = self.create()
+        self.assertEqual((candidate / "P0006.geocsv").read_bytes(), content)
+
     def add_instrument(self, created=RELEASE):
         (self.source / "second").mkdir()
         (self.source / "second/geo_DET_REQ.csv").write_bytes(geocsv("N0001", created))

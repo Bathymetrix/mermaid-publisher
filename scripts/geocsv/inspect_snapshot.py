@@ -51,17 +51,26 @@ def fingerprint(path):
 
 
 def inspect_source_geocsv(path, instrument_id):
-    """Read declarations and Station values; leave scientific parsing to the validator."""
+    """Require schema 1.0.0 identity; leave full parsing to the consumer validator."""
     created = []
     station_index = None
     count = 0
     with Path(path).open(encoding="utf-8", newline="") as stream:
         lines = iter(stream)
+        if next(lines, "").rstrip("\r\n") != "# MERMAID GeoCSV schema: 1.0.0":
+            raise ValueError(f"{path}: requires first-line MERMAID GeoCSV schema: 1.0.0 declaration")
         for line in lines:
             if line.startswith("#"):
+                if station_index is not None:
+                    raise ValueError(f"{path}: comments after the column header are invalid")
+                if line.startswith("# MERMAID GeoCSV schema:"):
+                    raise ValueError(f"{path}: duplicate MERMAID GeoCSV schema declaration")
                 match = re.match(r"#\s*created\s*:\s*(.*?)\s*$", line)
                 if match:
-                    value = match.group(1)
+                    declaration = line.rstrip("\r\n")
+                    if not re.fullmatch(r"#created: [0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\.[0-9]{6}Z", declaration):
+                        raise ValueError(f"{path}: schema 1.0.0 requires literal #created: and six-digit UTC timestamp")
+                    value = declaration.removeprefix("#created: ")
                     release_component(value)
                     created.append(value)
                 continue

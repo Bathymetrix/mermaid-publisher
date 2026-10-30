@@ -155,7 +155,9 @@ class PublicationRecording(unittest.TestCase):
 
     def test_git_archive_preserves_exact_crlf_bytes(self):
         git(self.archive, "config", "core.autocrlf", "true")
-        self.file.write_bytes(workflow.geocsv(created="2026-10-22T22:48:33.277Z").replace(b"\n", b"\r\n"))
+        self.file.write_bytes(workflow.geocsv(created="2026-10-22T22:48:33.277000Z").replace(b"\n", b"\r\n"))
+        from mermaid import geocsv
+        self.assertEqual(len(geocsv.read(self.file)[0]), 1)
         from create_snapshot import create_snapshot
         self.candidate = create_snapshot(self.source, self.workspace, self.inventory)
         self.report = self.workspace / "testing/validation" / self.candidate.name / "validation.json"

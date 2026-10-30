@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.4.1 — unreleased
+
+- Require the exact schema 1.0.0 declaration and six-digit UTC `#created`
+  during creation and candidate inspection, including recordless sources.
+- Reject duplicate schema declarations and comments after the column header;
+  preserve quoted multiline fields and exact source bytes.
+- Keep report schema 4, scientific limits and manifest/download semantics unchanged.
+
 ## 0.4.0 — unreleased
 
 - Require the migrated consumer >= 0.27.0 for schema 1.0.0 scientific validation.
