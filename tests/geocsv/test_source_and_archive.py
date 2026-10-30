@@ -187,6 +187,9 @@ class ProvenanceGate(unittest.TestCase):
 
 class PublicationCommand(unittest.TestCase):
     def setUp(self):
+        environment = patch.dict("os.environ", {"MERMAID_PUBLISHER_CONFIG": ""})
+        environment.start()
+        self.addCleanup(environment.stop)
         science.ArchiveValidation.setUp(self)
         self.archive = self.root / "archive"
         initialize(self.archive)
@@ -205,8 +208,21 @@ class PublicationCommand(unittest.TestCase):
         from mermaid import geocsv
         manifest = (self.candidate / "manifest.json").read_bytes()
         result = SimpleNamespace(provenance=SimpleNamespace(instrument_id="P0006", manifest=manifest))
-        with patch.object(sys, "argv", self.command), patch.object(publisher, "R2Store", return_value=self.store), patch.object(publisher, "verify_https"), patch.object(geocsv, "fetch", return_value=[result]), patch.object(publisher, "require_fetch_consumer"):
+        with patch.object(sys, "argv", self.command), patch.object(publisher, "R2Store", return_value=self.store) as store, patch.object(publisher, "verify_https"), patch.object(geocsv, "fetch", return_value=[result]), patch.object(publisher, "require_fetch_consumer"):
             publisher.main()
+        return store
+
+    def test_config_supplies_destination_and_profile_through_publication(self):
+        config = self.root / "settings.json"
+        config.write_text(json.dumps({"profile": "fixture-profile", "bucket": "fixture",
+                                      "endpoint_url": "https://storage.example.invalid",
+                                      "base_url": "https://example.test/geocsv/testing/",
+                                      "object_prefix": "geocsv/testing"}))
+        self.command = self.command[:self.command.index("--base-url")]
+        with patch.dict("os.environ", {"MERMAID_PUBLISHER_CONFIG": str(config)}):
+            store = self.invoke()
+        store.assert_called_once_with("https://storage.example.invalid", "fixture", profile="fixture-profile")
+        self.assertEqual(self.store.writes[-1], "geocsv/testing/latest.json")
 
     def test_real_gate_publication_and_git_record_are_connected(self):
         self.invoke()

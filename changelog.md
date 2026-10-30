@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.4.2 — unreleased
+
+- Load publication settings from the JSON file selected by `MERMAID_PUBLISHER_CONFIG`.
+- Let explicit CLI destination options override file settings and select the
+  configured SDK profile without loading credentials into publisher configuration.
+- Keep receipt-only recovery independent of publication configuration.
+
 ## 0.4.1 — unreleased
 
 - Require the exact schema 1.0.0 declaration and six-digit UTC `#created`

@@ -5,7 +5,7 @@ Create, validate, gate and publish immutable MERMAID data snapshots.
 This repository contains maintainer tools. GeoCSV is the only implemented
 workflow, under `scripts/geocsv/`. Future data types can use sibling directories.
 Scientific GeoCSV APIs remain in `mermaid-geocsv`; Bathymetrix hosting remains in
-`bathymetrix-site`. Repository version: **0.4.1**, independently maintained in
+`bathymetrix-site`. Repository version: **0.4.2**, independently maintained in
 `version`. No formal software or production data release has been published.
 
 ## Local installation
@@ -19,7 +19,7 @@ released, use the local checkout in the same pip invocation:
 .venv/bin/python -m pip check
 ```
 
-Publisher 0.4.1 requires mermaid-geocsv >= 0.27.0 and supports only payload
+Publisher 0.4.2 requires mermaid-geocsv >= 0.27.0 and supports only payload
 schema 1.0.0. Creation and candidate inspection require its exact first-line
 declaration and six-digit UTC `#created`; full parsing and scientific validation
 use the consumer. Historical consumer pins and fixture
@@ -39,6 +39,11 @@ versions and loaded source hashes are bound into every fresh report.
 
 The three commands run directly with `.venv/bin/python scripts/geocsv/<file>`.
 Use [the workflow guide](docs/geocsv/workflow.md) for complete commands.
+
+Publication settings can be loaded from a private JSON file selected by
+`MERMAID_PUBLISHER_CONFIG`; explicit CLI destination options take precedence.
+The file selects an SDK profile and destination settings; credentials remain
+with the SDK provider. See [configuration](docs/geocsv/workflow.md#publication-configuration).
 
 Creation freezes all instruments by default; `--instruments P0006 P0045`
 freezes only those IDs. Validation covers every original pair for the frozen

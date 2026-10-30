@@ -256,10 +256,30 @@ archive evidence is retained. Production is outside this operation.
 These public service identifiers and the local profile name are retained here
 for later operations. The account-specific S3 endpoint, private bucket/account
 configuration and credentials stay outside the public checkout. Resolve
-credentials through the SDK provider; never print or copy them. Supply the
-private endpoint/bucket through `GEOCSV_S3_ENDPOINT` and `GEOCSV_BUCKET` for
-the existing CLI. No deployment configuration locations or private values are
-recorded in this repository.
+credentials through the SDK provider; never print or copy them.
+
+### Publication configuration
+
+`MERMAID_PUBLISHER_CONFIG` optionally names a private JSON settings file outside
+software checkouts and the publication archive. Explicit CLI destination options
+override file settings. When the variable is unset or empty, supply the existing
+CLI options. A configured file that cannot be read or has invalid settings blocks
+the operation; settings are not printed in configuration errors.
+
+| JSON key | Publication setting |
+| --- | --- |
+| `profile` | Named SDK profile; omitted uses the SDK's normal profile selection |
+| `endpoint_url` | `--endpoint-url` |
+| `bucket` | `--bucket` |
+| `base_url` | `--base-url` |
+| `object_prefix` | `--object-prefix` |
+
+Only these keys are supported, each with a nonempty string value when present.
+Credentials remain with the SDK provider and must not be stored in this file.
+Treat the file as JSON, not shell code. `--plan` loads destination settings but
+performs no storage authentication or writes. `--record-only` does not load the
+file. Configuration does not authorize publication; all scientific and explicit
+authorization gates still apply.
 
 ## Publication and recording
 

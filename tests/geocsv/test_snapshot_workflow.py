@@ -4,12 +4,13 @@ from geocsv.schema_helpers import HEADER
 import hashlib
 import io
 import json
+import os
 from pathlib import Path
 import sys
 import tempfile
 import subprocess
 import unittest
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 from types import SimpleNamespace
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts/geocsv"))
@@ -265,6 +266,9 @@ class Publication(unittest.TestCase):
 
     def setUp(self):
         Snapshots.setUp(self)
+        self.environment = patch.dict(os.environ, {"MERMAID_PUBLISHER_CONFIG": ""})
+        self.environment.start()
+        self.addCleanup(self.environment.stop)
         self.candidate = self.create()
         self.report = self.root / "synthetic-validation.json"
         # This is transport test data, NOT a proposed validation report schema.
@@ -405,6 +409,66 @@ class Publication(unittest.TestCase):
             with self.assertRaises(FileExistsError):
                 with publisher.publication_lock(self.workspace):
                     self.fail("second publisher entered")
+
+
+class PublicationConfiguration(unittest.TestCase):
+    def setUp(self):
+        Snapshots.setUp(self)
+        self.config = self.root / "settings.json"
+        self.settings = {"profile": "fixture-profile", "bucket": "fixture-bucket",
+                         "endpoint_url": "https://storage.example.invalid",
+                         "base_url": "https://example.test/geocsv/testing/",
+                         "object_prefix": "geocsv/testing"}
+        self.config.write_text(json.dumps(self.settings))
+        environment = patch.dict(os.environ, {"MERMAID_PUBLISHER_CONFIG": str(self.config)})
+        environment.start()
+        self.addCleanup(environment.stop)
+
+    def test_file_settings_and_unset_environment(self):
+        self.assertEqual(publisher.read_publication_config(), self.settings)
+        with patch.dict(os.environ, {"MERMAID_PUBLISHER_CONFIG": ""}):
+            self.assertEqual(publisher.read_publication_config(), {})
+        with patch.dict(os.environ, clear=True):
+            self.assertEqual(publisher.read_publication_config(), {})
+
+    def test_invalid_config_errors_do_not_expose_contents(self):
+        private = "private-value-must-not-appear"
+        for content in ('{"bucket": "' + private, '["' + private + '"]',
+                        json.dumps({"bucket": private, "aws_secret_access_key": private}),
+                        '{"bucket":"first","bucket":"' + private + '"}',
+                        '{"bucket":42}', '{"profile":" "}'):
+            self.config.write_text(content)
+            with self.subTest(content=content), self.assertRaises(ValueError) as caught:
+                publisher.read_publication_config()
+            self.assertNotIn(private, str(caught.exception))
+        self.config.unlink()
+        with self.assertRaisesRegex(ValueError, "cannot read MERMAID_PUBLISHER_CONFIG"):
+            publisher.read_publication_config()
+
+    def test_plan_loads_file_and_cli_overrides_without_authentication(self):
+        candidate = Snapshots.create(self)
+        command = ["publish_snapshot.py", "--candidate", str(candidate), "--plan"]
+        for overrides, expected_url in (([], self.settings["base_url"]),
+                                       (["--base-url", "https://override.test/testing/"], "https://override.test/testing/")):
+            with patch.object(sys, "argv", command + overrides), patch("sys.stdout", new_callable=io.StringIO) as output, patch.object(publisher, "R2Store") as store:
+                publisher.main()
+                self.assertEqual(json.loads(output.getvalue())["base_url"], expected_url)
+                store.assert_not_called()
+
+    def test_record_only_does_not_load_config(self):
+        self.config.unlink()
+        with patch.object(sys, "argv", ["publish_snapshot.py", "--record-only", "fixture-receipt.json"]), patch.object(publisher, "commit_publication") as record, patch("sys.stdout", new_callable=io.StringIO):
+            publisher.main()
+            record.assert_called_once_with(Path("fixture-receipt.json"))
+
+    def test_store_uses_named_sdk_profile(self):
+        session = Mock()
+        boto3 = SimpleNamespace(Session=Mock(return_value=session))
+        with patch.dict(sys.modules, {"boto3": boto3}):
+            store = publisher.R2Store(self.settings["endpoint_url"], self.settings["bucket"], profile=self.settings["profile"])
+        boto3.Session.assert_called_once_with(profile_name="fixture-profile")
+        session.client.assert_called_once_with("s3", endpoint_url=self.settings["endpoint_url"], region_name="auto")
+        self.assertEqual(store.bucket, "fixture-bucket")
 
 
 if __name__ == "__main__":

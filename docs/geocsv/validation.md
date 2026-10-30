@@ -59,7 +59,7 @@ recordless-exclusion count, not the excluded payloads.
 ## Scientific checks and limits
 
 The fixed limits reproduce the package's documented original-segment contract
-and [SAC tutorial](../../../mermaid-geocsv/tutorials/write-sac.md) comparisons.
+and [SAC tutorial](../../../mermaid-geocsv/tutorials/04_write-sac.md) comparisons.
 Limits are recorded in every report and are not configurable from the CLI.
 Failures do not trigger wider tolerances.
 The one-ULP representation-check pattern is established in the package's

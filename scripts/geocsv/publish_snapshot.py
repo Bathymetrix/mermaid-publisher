@@ -5,6 +5,7 @@ import argparse
 from contextlib import contextmanager
 import hashlib
 import json
+import os
 from pathlib import Path
 import tempfile
 from datetime import datetime, timezone
@@ -30,9 +31,10 @@ def require_scientific_acceptance(candidate, report, source_root=None):
 class R2Store:
     """Small S3 transport; credentials are resolved by the SDK, never inspected here."""
 
-    def __init__(self, endpoint_url, bucket):
+    def __init__(self, endpoint_url, bucket, *, profile=None):
         import boto3  # Optional deployment dependency; offline staging needs no SDK.
-        self.client = boto3.client("s3", endpoint_url=endpoint_url, region_name="auto")
+        session = boto3.Session(profile_name=profile)
+        self.client = session.client("s3", endpoint_url=endpoint_url, region_name="auto")
         self.bucket = bucket
 
     def get(self, key):
@@ -303,8 +305,27 @@ def record_publication(candidate, report, base_url, object_prefix, *, already_se
     return receipt
 
 
+def read_publication_config():
+    """Load optional environment-selected settings without disclosing private values."""
+    path = os.environ.get("MERMAID_PUBLISHER_CONFIG")
+    if not path:
+        return {}
+    try:
+        config = read_json(Path(path).expanduser())
+    except (OSError, ValueError, UnicodeError):
+        raise ValueError("cannot read MERMAID_PUBLISHER_CONFIG as a JSON settings file") from None
+    keys = {"profile", "bucket", "endpoint_url", "base_url", "object_prefix"}
+    if (not isinstance(config, dict) or config.keys() - keys
+            or any(not isinstance(value, str) or not value.strip() for value in config.values())):
+        raise ValueError("MERMAID_PUBLISHER_CONFIG accepts only profile, bucket, endpoint_url, "
+                         "base_url and object_prefix with nonempty string values")
+    return config
+
+
 def main():
-    parser = argparse.ArgumentParser(description=__doc__)
+    parser = argparse.ArgumentParser(description=__doc__, epilog=(
+        "MERMAID_PUBLISHER_CONFIG may name a private JSON settings file; "
+        "explicit destination options override file settings. Credentials use the SDK provider."))
     parser.add_argument("--candidate", type=Path)
     parser.add_argument("--report", type=Path)
     parser.add_argument("--source-root", type=Path, help="read-only processed root")
@@ -325,6 +346,10 @@ def main():
                 raise PublicationRecordingError("published; local recording remains incomplete") from exc
             print("Local publication recording complete")
             return
+        config = read_publication_config()
+        for key in ("base_url", "object_prefix", "endpoint_url", "bucket"):
+            if getattr(args, key) is None:
+                setattr(args, key, config.get(key))
         if not args.candidate or not args.base_url or not args.object_prefix:
             raise ValueError("--candidate, --base-url and --object-prefix are required")
         base_url, object_prefix = check_destination(args.base_url, args.object_prefix)
@@ -351,7 +376,7 @@ def main():
         with publication_lock(workspace):
             accepted_fingerprint = fingerprint(args.report)
             accepted = require_scientific_acceptance(candidate, args.report, args.source_root)
-            store = R2Store(args.endpoint_url, args.bucket)
+            store = R2Store(args.endpoint_url, args.bucket, profile=config.get("profile"))
             already_selected = _transfer_and_verify(
                 candidate, args.report, store, base_url, object_prefix=object_prefix,
                 accepted=accepted, report_fingerprint=accepted_fingerprint,
