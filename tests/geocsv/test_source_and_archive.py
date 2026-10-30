@@ -138,10 +138,8 @@ class PublicationRecording(unittest.TestCase):
         self.report = report_directory / self.report.name
         staging = self.workspace / "testing/staging" / original_name
         staging.rename(staging.with_name(component))
-        receipt = self.record()
-        publisher.commit_publication(receipt)
-        committed = git(self.archive, "ls-tree", "-r", "--name-only", "HEAD")
-        self.assertIn(f"snapshots/{component}/manifest.json", committed)
+        with self.assertRaisesRegex(ValueError, "hyphenated release component"):
+            self.record()
 
     def test_tampered_provenance_is_rejected_before_local_recording(self):
         receipt = self.record()
@@ -177,7 +175,7 @@ class ProvenanceGate(unittest.TestCase):
     def test_report_binds_provenance_and_rejects_source_tracking_changes(self):
         from gate_snapshot import require_acceptance
         report = self.validate()
-        self.assertEqual(report["schema_version"], 3)
+        self.assertEqual(report["schema_version"], 4)
         self.assertEqual(report["source_provenance_sha256"], fingerprint(self.candidate / "source_provenance.json")[1])
         initialize(self.source)
         git(self.source, "add", ".")
@@ -227,7 +225,7 @@ class PublicationCommand(unittest.TestCase):
 
     def test_selected_snapshot_is_validated_uploaded_and_archived_as_frozen(self):
         from create_snapshot import create_snapshot
-        self.geo.write_text(self.geo.read_text().replace("2026-10-21T", "2026-10-22T"))
+        self.geo.write_text(self.geo.read_text().replace("2026-10-29T", "2026-10-30T"))
         unselected = self.source / "unselected"
         unselected.mkdir()
         (unselected / "geo_DET_REQ.csv").write_text(self.geo.read_text().replace("P0006", "P0045"))

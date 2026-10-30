@@ -1,5 +1,6 @@
 """Offline publication checks. Synthetic data/reports never authorize publication."""
 
+from geocsv.schema_helpers import HEADER
 import hashlib
 import io
 import json
@@ -16,13 +17,16 @@ from create_snapshot import create_snapshot
 from inspect_snapshot import fingerprint, json_bytes, release_component, verify_candidate
 import publish_snapshot as publisher
 
-RELEASE = "2026-10-21T22:48:33.277000001Z"
-COMPONENT = "2026-10-21T22-48-33.277000001Z"
+RELEASE = "2026-10-21T22:48:33.277000Z"
+COMPONENT = "2026-10-21T22-48-33.277000Z"
 
 
 def geocsv(instrument="P0006", created=RELEASE, note=""):
-    return (f"#dataset: GeoCSV\n#created: {created}\n{note}"
-            f"MethodIdentifier,Station\nMeasurement:GPS,{instrument}\n").encode()
+    header = HEADER.replace("2026-10-29T00:00:00.000000Z", created)
+    header = header.replace("MethodIdentifier,Time", note + "MethodIdentifier,Time")
+    return (header +
+            f"Measurement:Position:synthetic,2020-01-01T00:00:00.000000Z,MH,{instrument},,,,12,-150,,,MERMAID_test,,,,\n").encode()
+
 
 
 class Snapshots(unittest.TestCase):
@@ -43,8 +47,10 @@ class Snapshots(unittest.TestCase):
 
     def test_exact_copy_deterministic_idempotent_inventory(self):
         source = self.file.read_bytes()
+        from mermaid import geocsv as consumer
+        self.assertEqual(len(consumer.read(source)[0]), 1)
         result = self.create()
-        self.assertEqual(result.relative_to(self.workspace.resolve()), Path("testing/snapshots/2026-10-21T22-48-33.277000001Z"))
+        self.assertEqual(result.relative_to(self.workspace.resolve()), Path("testing/snapshots/2026-10-21T22-48-33.277000Z"))
         self.assertEqual((result / "P0006.geocsv").read_bytes(), source)
         self.assertEqual(self.file.read_bytes(), source)
         manifest = (result / "manifest.json").read_bytes()
@@ -64,7 +70,7 @@ class Snapshots(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "exactly one"):
                 self.create()
         self.file.write_bytes(geocsv())
-        self.add_instrument(created=RELEASE.replace(".277000001", ".277"))
+        self.add_instrument(created=RELEASE.replace(".277000", ".277001"))
         with self.assertRaisesRegex(ValueError, "mixed"):
             self.create()
 
@@ -94,15 +100,13 @@ class Snapshots(unittest.TestCase):
         first = self.create()
         historical = first.with_name(quote(RELEASE, safe=""))
         first.rename(historical)
-        self.assertEqual(verify_candidate(historical)["release_id"], RELEASE)
-        current = self.create()
-        self.assertEqual((current / "manifest.json").read_bytes(), (historical / "manifest.json").read_bytes())
-        self.file.write_bytes(geocsv(note="#new: comment\n"))
-        with self.assertRaisesRegex(FileExistsError, "historical snapshot"):
+        with self.assertRaisesRegex(ValueError, "hyphenated release component"):
+            verify_candidate(historical)
+        with self.assertRaisesRegex(ValueError, "unsupported encoded snapshot"):
             self.create()
 
     def test_station_mismatch_and_multiple_ids_raise(self):
-        for content in (geocsv("P0007"), geocsv() + b"Measurement:GPS,P0007\n"):
+        for content in (geocsv("P0007"), geocsv() + geocsv("P0007").splitlines(keepends=True)[-1]):
             self.file.write_bytes(content)
             with self.assertRaisesRegex(ValueError, "Station"):
                 self.create()
@@ -223,7 +227,7 @@ class Publication(unittest.TestCase):
         self.store = MemoryStore()
         manifest_bytes = (self.candidate / "manifest.json").read_bytes()
         result = SimpleNamespace(provenance=SimpleNamespace(instrument_id="P0006", manifest=manifest_bytes))
-        self.client = SimpleNamespace(geocsv=SimpleNamespace(__version__="0.26.0", fetch=lambda **kwargs: [result]))
+        self.client = SimpleNamespace(geocsv=SimpleNamespace(__version__="0.27.0", fetch=lambda **kwargs: [result]))
         self.patches = [patch.object(publisher, "verify_https"),
                         patch.dict(sys.modules, {"mermaid": self.client})]
         self.https = self.patches[0].start()
@@ -242,7 +246,7 @@ class Publication(unittest.TestCase):
 
     def test_old_fetch_consumer_stops_before_remote_writes(self):
         self.client.geocsv.__version__ = "0.24.0"
-        with self.assertRaisesRegex(ValueError, ">= 0.26.0"):
+        with self.assertRaisesRegex(ValueError, ">= 0.27.0"):
             self.transfer()
         self.assertEqual(self.store.writes, [])
 
@@ -254,9 +258,10 @@ class Publication(unittest.TestCase):
         self.store.data["geocsv/testing/latest.json"] = json_bytes({
             "release_id": RELEASE, "testing_only": True,
             "manifest": f"releases/{quote(RELEASE, safe='')}/manifest.json"})
-        self.transfer()
+        with self.assertRaisesRegex(ValueError, "pointer is inconsistent"):
+            self.transfer()
         self.assertEqual(self.store.data[old_prefix + "manifest.json"], old_manifest)
-        self.assertFalse(any(key.startswith(old_prefix) for key in self.store.writes))
+        self.assertEqual(self.store.writes, [])
 
     def test_cli_plan_is_read_only_and_publication_requires_full_evidence(self):
         script = Path(publisher.__file__)

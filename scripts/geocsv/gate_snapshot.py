@@ -1,4 +1,4 @@
-"""Version 3 exhaustive snapshot evidence and publication gate for MERMAID GeoCSV."""
+"""Version 4 exhaustive snapshot evidence and publication gate for MERMAID GeoCSV."""
 
 import importlib.metadata
 import math
@@ -10,7 +10,7 @@ import sys
 from inspect_snapshot import check_instrument, check_source_provenance, fingerprint, inspect_source_geocsv, read_json, verify_candidate
 
 SCHEMA = "bathymetrix-geocsv-archive-validation"
-VERSION = 3
+VERSION = 4
 CHECKS = (
     "strict_association", "identity", "sample_count", "samples_native",
     "samples_reference", "sample_interval", "start_native", "start_reference",

@@ -1,15 +1,14 @@
 """Fixed download fixtures and producer compatibility with the installed consumer."""
 
+from geocsv.schema_helpers import HEADER
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json
 import hashlib
-import os
 from pathlib import Path
 import sys
 import tempfile
 from threading import Thread
 import unittest
-from urllib.parse import quote
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts/geocsv"))
 from create_snapshot import create_snapshot
@@ -24,12 +23,9 @@ class FetchCompatibility(unittest.TestCase):
         manifest = json.loads((fixtures / "manifest.json").read_bytes())
         payload = (fixtures / "P0006.geocsv").read_bytes()
         self.assertEqual(hashlib.sha256(payload).hexdigest(), manifest["files"][0]["sha256"])
-        self.assertEqual(geocsv.read(payload)[0].loc[0, "Station"], "P0006")
-        baseline = json.loads((fixtures / "consumer_baseline.json").read_bytes())
-        if os.environ.get("MERMAID_CONSUMER_BASELINE") == "1":
-            self.assertEqual(geocsv.__version__, baseline["version"])
-            sources = Path(geocsv.__file__).parent
-            self.assertEqual({p.name: hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(sources.glob("*.py"))}, baseline["python_sources"])
+        # Transport can retrieve historical bytes; the new-only reader rejects them.
+        with self.assertRaisesRegex(geocsv.GeoCSVError, "schema"):
+            geocsv.read(payload)
 
     def test_real_client_timestamp_paths_for_memory_and_disk(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -37,9 +33,8 @@ class FetchCompatibility(unittest.TestCase):
             source = root / "processed/serial"
             source.mkdir(parents=True)
             # Synthetic data exercises parsing, timestamps and missing values.
-            source.joinpath("geo_DET_REQ.csv").write_bytes(
-                b"#dataset: GeoCSV\n#created: 2026-10-21T22:48:33.277000001Z\n"
-                b"#field_type: string,float\nStation,Latitude\nP0006,-14.4\n")
+            source.joinpath("geo_DET_REQ.csv").write_text(HEADER +
+                "Measurement:Position:synthetic,2026-01-01T00:00:00.000000Z,MH,P0006,,,,-14.4,-150,,,MERMAID_synthetic,,,,\n")
             inventory = root / "instruments.csv"
             other = source.parent / "other"
             other.mkdir()
@@ -48,9 +43,7 @@ class FetchCompatibility(unittest.TestCase):
             candidate = create_snapshot(source.parent, root / "work", inventory, instruments=["P0006"])
             manifest = json.loads((candidate / "manifest.json").read_bytes())
             release = manifest["release_id"]
-            # Keep the exact frozen consumer's historical protocol exercised.
-            baseline = os.environ.get("MERMAID_CONSUMER_BASELINE") == "1"
-            component = quote(release, safe="") if baseline else release_component(release)
+            component = release_component(release)
             prefix = f"/geocsv/releases/{component}/"
             responses = {prefix + path.name: path.read_bytes() for path in candidate.iterdir() if path.name != "source_provenance.json"}
             responses["/geocsv/latest.json"] = json.dumps({
@@ -92,12 +85,6 @@ class FetchCompatibility(unittest.TestCase):
                 self.assertEqual(results[0].path.parent.name, component)
                 self.assertEqual(results[0].path.read_bytes(), (candidate / "P0006.geocsv").read_bytes())
                 self.assertTrue(all(encoding == "identity" for _, encoding in requests))
-                if baseline:
-                    responses["/geocsv/latest.json"] = json.dumps({
-                        "release_id": release, "testing_only": True,
-                        "manifest": f"releases/{release_component(release)}/manifest.json"}).encode()
-                    with self.assertRaisesRegex(geocsv.GeoCSVFetchError, "manifest path"):
-                        geocsv.fetch(base_url=base, output_dir=None)
             finally:
                 server.shutdown()
                 server.server_close()

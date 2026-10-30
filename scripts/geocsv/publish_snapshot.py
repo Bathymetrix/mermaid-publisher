@@ -98,8 +98,8 @@ def verify_https(url, expected):
 def require_fetch_consumer():
     """Reject the historical download protocol before any object writes."""
     from mermaid import geocsv
-    if tuple(int(part) for part in geocsv.__version__.split(".")) < (0, 26, 0):
-        raise ValueError("publication with hyphenated release paths requires mermaid-geocsv >= 0.26.0")
+    if tuple(int(part) for part in geocsv.__version__.split(".")) < (0, 27, 0):
+        raise ValueError("schema 1.0.0 publication requires mermaid-geocsv >= 0.27.0")
 
 
 def _transfer_and_verify(candidate, report, store, base_url, *, object_prefix, accepted=None, report_fingerprint=None, before_activation=None):
@@ -131,11 +131,11 @@ def _transfer_and_verify(candidate, report, store, base_url, *, object_prefix, a
             old = json.load(stream)
         old_id = old.get("release_id")
         old_component = release_component(old_id)
-        old_paths = {f"releases/{old_component}/manifest.json", f"releases/{quote(old_id, safe='')}/manifest.json"}
-        if old.get("testing_only") is not True or old.get("manifest") not in old_paths:
+        if (old.get("testing_only") is not True
+                or old.get("manifest") != f"releases/{old_component}/manifest.json"):
             raise ValueError("current testing pointer is inconsistent")
         already_selected = old_id == release
-        previous_component = old_component if old["manifest"] == f"releases/{old_component}/manifest.json" else old_id
+        previous_component = old_component
         previous = store.get(f"{object_prefix}/releases/{previous_component}/manifest.json")
         if previous is None:
             raise ValueError("current latest manifest is missing")
@@ -244,8 +244,6 @@ def commit_publication(receipt_path):
         raise ValueError("unsupported publication receipt")
     base_url, prefix = check_destination(receipt["base_url"], receipt["object_prefix"])
     component = release_component(receipt["release_id"])
-    if not (workspace / "validation" / component / receipt["report_filename"]).is_file():
-        component = quote(receipt["release_id"], safe="")  # Historical receipt recovery.
     candidate = workspace / "snapshots" / component
     manifest = verify_candidate(candidate)
     if manifest["release_id"] != receipt["release_id"]:

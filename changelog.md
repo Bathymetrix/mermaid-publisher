@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.4.0 — unreleased
+
+- Require the migrated consumer >= 0.27.0 for schema 1.0.0 scientific validation.
+- Select Recording rows and Time, and verify explicit source Elevation.
+- Introduce report revision 4 with `recording_records`; retain scientific limits.
+- Remove active historical-consumer, encoded-candidate and receipt aliases.
+- Retain immutable historical fixtures, baseline fingerprints and reports.
+
 ## 0.1.0 — unreleased
 
 - Migrate the GeoCSV workflow from bathymetrix-site commit 698bc38.

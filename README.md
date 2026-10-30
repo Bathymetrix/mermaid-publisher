@@ -5,31 +5,24 @@ Create, validate, gate and publish immutable MERMAID data snapshots.
 This repository contains maintainer tools. GeoCSV is the only implemented
 workflow, under `scripts/geocsv/`. Future data types can use sibling directories.
 Scientific GeoCSV APIs remain in `mermaid-geocsv`; Bathymetrix hosting remains in
-`bathymetrix-site`. Repository version: **0.3.0**, independently maintained in
+`bathymetrix-site`. Repository version: **0.4.0**, independently maintained in
 `version`. No formal software or production data release has been published.
 
-## Setup
+## Local installation
 
-Python 3.12 is the tested operator runtime. Create the repository's environment
-once, then install the fixed consumer baseline and scientific/transport dependencies:
+Use the existing environment and install the adjacent migrated consumer with
+its declared scientific/transport dependencies. Before consumer 0.27.0 is
+released, use the local checkout in the same pip invocation:
 
 ```bash
-python3.12 -m venv .venv
-.venv/bin/python -m pip install -r requirements/geocsv.txt
+.venv/bin/python -m pip install --force-reinstall ../mermaid-geocsv -r requirements/geocsv.txt
+.venv/bin/python -m pip check
 ```
 
-The requirement retains the exact historical `mermaid-geocsv` 0.24.0 source
-pin for scientific and old-protocol checks. New publication requires consumer
->= 0.26.0 for hyphenated release paths. For local operations with the adjacent
-updated source, prefix commands with `PYTHONPATH=../mermaid-geocsv/src`; this
-selects it without replacing the frozen installation. CI runs both
-the frozen consumer and an explicitly selected current consumer. Updating the
-baseline is a compatibility decision, not a routine dependency refresh.
-The [2026-10-26 baseline review](docs/geocsv/consumer-baseline-review.md)
-records the reader-module rename, preserved historical fingerprints and the
-requirement for fresh validation before another publication.
-`boto3` is used only for publication transport; snapshot creation uses the
-standard library. Dependency versions and code hashes are recorded in reports.
+Publisher 0.4.0 requires mermaid-geocsv >= 0.27.0 and supports only payload
+schema 1.0.0 for scientific validation. Historical consumer pins and fixture
+bytes remain evidence, without an active legacy reader/exporter path. Installed
+versions and loaded source hashes are bound into every fresh report.
 
 ## GeoCSV workflow
 
@@ -80,7 +73,7 @@ No credentials or private deployment configuration belong in either Git reposito
 - [Create, validate, gate, publish and recover](docs/geocsv/workflow.md)
 - [Publication/download contract](docs/geocsv/contract.md)
 - [Hyphenated path review and testing replacement](docs/geocsv/release-path-review.md)
-- [Scientific checks and report schema 3](docs/geocsv/validation.md)
+- [Scientific checks and report schema 4](docs/geocsv/validation.md)
 - [Historical version-2 archive findings](docs/geocsv/archive-findings.md)
 - [Fresh schema-3 full-corpus and testing-batch findings](docs/geocsv/schema3-findings.md)
 
@@ -88,25 +81,22 @@ No credentials or private deployment configuration belong in either Git reposito
 
 Current consumers use `associate(..., create_sac_header=True)` and ObsPy writing.
 The publisher retains the former exporter checks in `_verify_sac.py` and keeps
-the fixed 0.24.0 consumer supported through its original public writer. The
-baseline pin and historical download fixtures are unchanged. See the
+historical 0.24.0 evidence unchanged. The active path requires consumer >= 0.27.0
+with fresh SAC header creation; no legacy exporter branch remains. See the
 [complete verification migration inventory](docs/geocsv/sac-verification.md).
 
 ## Verification
 
 ```bash
-MERMAID_CONSUMER_BASELINE=1 .venv/bin/python -B -m unittest discover -s tests -v
+.venv/bin/python -B -m unittest discover -s tests -v
 ```
 
-To test the adjacent refactored consumer without changing the pinned install:
+Tests use synthetic temporary inputs, mocked remote storage and disposable
+fixture Git repositories. They do not publish real data or modify the real
+publication archive. Scientific validation uses only public consumer APIs,
+`associate(..., create_sac_header=True)`, ObsPy writing and publisher-owned
+export comparisons. Schema-4 reports use `recording_records`; comparison limits
+are unchanged. The historical 0.24.0 evidence and schema-3 reports remain intact.
 
-```bash
-PYTHONPATH=../mermaid-geocsv/src MERMAID_CONSUMER_BASELINE=0 \
-  .venv/bin/python -B -m unittest discover -s tests -v
-```
-
-Tests use synthetic sources, temporary Git repositories and localhost HTTP.
-They do not access canonical data or publish remotely. The historical 43,365-pair
-pass predates this migration and does not accept a new candidate or schema-3 report.
-
-Developed and maintained by [Bathymetrix®](https://bathymetrix.com).
+Local schema migration and candidate acceptance do not establish a software
+release, compatible hosted payloads, deployment or publication authorization.

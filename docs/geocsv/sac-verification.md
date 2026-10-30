@@ -1,3 +1,14 @@
+# Current SAC verification
+
+The active publisher requires consumer >= 0.27.0 and schema 1.0.0. It calls
+`associate(..., create_sac_header=True)` and writes with ObsPy. No public consumer
+writer or historical-consumer compatibility path remains. Recording `Time`,
+explicit source Elevation and the literal two-space blank Location are verified.
+All existing numeric limits and final-waveform checks remain unchanged.
+
+The following inventory is retained as historical migration evidence; its older
+consumer compatibility statements do not describe current executable behavior.
+
 # SAC header refactor and retained verification
 
 Consumer 0.25.0 replaces `geocsv.write_sac(trace, path)` with optional
@@ -57,17 +68,13 @@ coordinates, depth and zero elevation. No tolerance has been widened.
 software or evidence requires a distinct fresh report; old reports and hosted
 objects are not rewritten.
 
-## Compatibility
+## Current consumer requirement
 
-The frozen consumer remains 0.24.0 at
-`33ed5ff477b6c44447d472fc8e828b5ae930e0db`, with unchanged requirements and
-fingerprint fixtures. The publisher explicitly detects the public association
-keyword: current consumers create headers during association and use local
-verification plus ObsPy writing; the frozen consumer continues through its
-existing public writer. No consumer private implementation is imported.
-Historical manifest/payload fixtures and archived reports remain unchanged.
-The publisher's pinned environment is retained; current source is selected
-explicitly through PYTHONPATH for local compatibility tests.
+The active publisher requires consumer >= 0.27.0 and schema 1.0.0. It calls the
+public `create_sac_header=True` association option and writes with ObsPy after
+independent verification. No private consumer implementation is imported.
+Historical baseline fingerprints, manifest/payload fixtures and reports remain
+unchanged, without an active legacy-consumer matrix or exporter branch.
 
 ## Verification migration inventory
 

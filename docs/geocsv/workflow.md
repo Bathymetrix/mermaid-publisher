@@ -1,3 +1,12 @@
+# Current local schema workflow
+
+Publisher 0.4.0 requires the migrated consumer >= 0.27.0. Install the adjacent
+local checkout as described in the README. Use create and validate for isolated
+`testing_only: true` candidates. Report schema 4 uses `recording_records` and
+retains all scientific limits. Existing hosted bytes remain old-format; use a
+local test server for new-format fetch/read verification. No publication is
+authorized by local acceptance. Historical deployment observations below retain their original software and data provenance.
+
 # GeoCSV publication workflow
 
 The publisher owns snapshot creation, full-archive validation, report schema and
@@ -30,7 +39,7 @@ flowchart TB
 
 Current consumers supply fresh SAC station location headers at association;
 ObsPy supplies writing and the publisher verifies final-waveform consistency,
-storage and round trips. The frozen baseline remains supported. See the
+storage and round trips. Historical consumer/exporter compatibility is removed. See the
 [SAC verification inventory](sac-verification.md).
 
 ## Sources and archive
@@ -182,7 +191,7 @@ from any alternative endpoint; changing a hostname alone does not establish that
 
 An existing published candidate can be revalidated locally without recreating
 it or changing its hosted evidence. Inspect the actual consumer revision and
-public imports, review compatibility, and verify the installed frozen baseline
+public imports, verify schema 1.0.0 support and the freshly installed consumer
 before running validation. Retain previous reports unchanged: the acceptance
 gate rejects reports whose software fingerprints differ from the current
 installation, even when the package version is unchanged.
@@ -207,18 +216,18 @@ Publisher 0.3.0 creates new snapshot/staging directories and R2 keys using
 `release_id.replace(":", "-")`. New validation directories use that same
 component. Manifest `release_id`, GeoCSV `#created`, provenance, arbitrary
 record timestamps and exact payload bytes are unchanged. All fractional digits
-are retained. Existing encoded local archive directories and receipts remain
-readable; creation checks their immutable bytes before creating a new layout.
+are retained. Existing encoded local archive directories and receipts remain historical
+evidence; active candidate inspection, creation and receipt recovery reject
+encoded paths rather than reading them as aliases.
 The operator does not rename or rewrite historical evidence.
 
-Publication requires mermaid-geocsv >= 0.26.0. The retained requirements pin is
-the frozen historical scientific/download baseline. Prefix create, validate,
-plan and publish commands with `PYTHONPATH=../mermaid-geocsv/src` to select the
-adjacent updated source without changing that installation. Reports bind the
-selected consumer's exact code and version. Old consumers are rejected before
-object writes. See the [compatibility review](release-path-review.md).
+Publication requires mermaid-geocsv >= 0.27.0 and new schema 1.0.0 payloads.
+Before release, install the adjacent local checkout with the requirements in the
+README. Reports bind the installed consumer's exact code and version. Old
+consumers are rejected before object writes. The historical
+[compatibility review](release-path-review.md) records the path protocol.
 
-The 2026-10-28 replacement is authorized for the existing P0006/P0045 testing
+The historical 2026-10-28 replacement was authorized for the existing P0006/P0045 testing
 scope. Preserve original data/manifest bytes, create fresh scientific evidence,
 verify the new objects and pinned fetch before selecting latest, and retire
 only the prior testing release objects after replacement verification. Old

@@ -1,6 +1,7 @@
 """Full public-API round trips and candidate-bound acceptance, using synthetic originals."""
 
 from copy import deepcopy
+from geocsv.schema_helpers import HEADER
 import json
 from pathlib import Path
 import sys
@@ -49,12 +50,8 @@ class ArchiveValidation(unittest.TestCase):
         reference.stel = 0
         reference.write(str(self.sac))
         self.geo = self.serial / "geo_DET_REQ.csv"
-        self.geo.write_text(
-            "#dataset: GeoCSV\n#created: 2026-10-21T22:48:33.277Z\n"
-            "#field_type: string,datetime,string,string,string,string,string,float,float,float,float,string,float,integer,float,float\n"
-            "#field_unit: unitless,iso8601,unitless,unitless,unitless,unitless,unitless,degrees_north,degrees_east,meters,mbar,unitless,hertz,unitless,seconds,seconds\n"
-            "MethodIdentifier,StartTime,Network,Station,Location,Channel,DataQuality,Latitude,Longitude,Elevation,WaterPressure,InstrumentDescription,SampleRate,SampleCount,TimeDelay,TimeCorrection\n"
-            "Algorithm(event):test,2020-01-01T00:00:00.000Z,MH,P0006,00,BDH,Q,12.345678,-150.123456,nan,10000,test,20,4,nan,nan\n")
+        self.geo.write_text(HEADER +
+            "Derivation:Recording:automaid-v0,2020-01-01T00:00:00.000000Z,MH,P0006,00,BDH,Q,12.345678,-150.123456,0,10000,MERMAID_test,20,4,,0\n")
         self.inventory = self.root / "instruments.csv"
         self.inventory.write_text("instrument_serial,instrument_id\nserial,P0006\n")
         self.work = self.root / "publication"
@@ -192,8 +189,7 @@ class ArchiveValidation(unittest.TestCase):
     def test_recordless_instrument_is_accounted_locally_and_not_staged(self):
         empty = self.source / "empty"
         empty.mkdir()
-        (empty / "geo_DET_REQ.csv").write_text(
-            "#dataset: GeoCSV\n#created: 2026-10-21T22:48:33.277Z\nStation\n")
+        (empty / "geo_DET_REQ.csv").write_text(HEADER)
         self.inventory.write_text(self.inventory.read_text() + "empty,R0060\n")
         self.candidate = create_snapshot(self.source, self.root / "empty-work", self.inventory)
         self.assertFalse((self.candidate / "R0060.geocsv").exists())
@@ -217,7 +213,7 @@ class ArchiveValidation(unittest.TestCase):
             require_acceptance(self.candidate, self.report_path, self.source)
 
     def test_req_missing_pressure_remains_undefined(self):
-        self.geo.write_text(self.geo.read_text().replace(",Q,12.345678,-150.123456,nan,10000,", ",D,12.345678,-150.123456,nan,nan,"))
+        self.geo.write_text(self.geo.read_text().replace(",Q,12.345678,-150.123456,0,10000,", ",D,12.345678,-150.123456,0,,"))
         reference = SACTrace.read(str(self.sac))
         reference.stdp = None
         reference.write(str(self.sac))

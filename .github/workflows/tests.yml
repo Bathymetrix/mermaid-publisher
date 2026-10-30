@@ -6,24 +6,19 @@ permissions:
   contents: read
 jobs:
   geocsv:
-    name: GeoCSV / ${{ matrix.consumer }} consumer
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        consumer: [baseline, current]
     steps:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
+      - uses: actions/checkout@v7
+        with:
+          repository: Bathymetrix/mermaid-geocsv
+          path: consumer
+          persist-credentials: false
       - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
-      - run: python -m pip install -r requirements/geocsv.txt
-      - name: Select current consumer explicitly
-        if: matrix.consumer == 'current'
-        run: python -m pip install --no-deps --force-reinstall 'mermaid-geocsv @ git+https://github.com/Bathymetrix/mermaid-geocsv.git@main'
-      - name: Run offline workflow and compatibility checks
-        env:
-          MERMAID_CONSUMER_BASELINE: ${{ matrix.consumer == 'baseline' && '1' || '0' }}
-        run: python -B -m unittest discover -s tests -v
+      # The coordinated consumer must be available before this migration runs remotely.
+      - run: python -m pip install ./consumer -r requirements/geocsv.txt
+      - run: python -B -m unittest discover -s tests -v

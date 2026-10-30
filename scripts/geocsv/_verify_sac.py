@@ -53,11 +53,13 @@ def write_verified_sac(trace, path):
     for field, key in (("Network", "network"), ("Station", "station"),
                        ("Location", "location"), ("Channel", "channel")):
         code = source.get(field)
-        if (not isinstance(code, str) or code != trace.stats[key]
+        # The source keeps its two-space known blank; SAC uses the waveform code.
+        compared = "" if field == "Location" and code == "  " else code
+        if (not isinstance(code, str) or compared != trace.stats[key]
                 or waveform.get(key) != trace.stats[key]):
             raise ValueError(f"{trace.id}: waveform {key} differs from its association")
-        if (not code.isascii() or len(code) > 8 or code.strip() != code
-                or code == "-12345"):
+        if (not compared.isascii() or len(compared) > 8 or compared.strip() != compared
+                or compared == "-12345"):
             raise ValueError(f"{trace.id}: {key} cannot be preserved in an "
                              "eight-byte ASCII SAC identity header")
     count = source.get("SampleCount")
@@ -78,7 +80,7 @@ def write_verified_sac(trace, path):
     if (not np.isfinite(samples).all()
             or np.any((trace.data != 0) & (samples == 0))):
         raise ValueError(f"{trace.id}: samples cannot be represented in SAC float32 storage")
-    source_start = pd.Timestamp(source.get("StartTime"))
+    source_start = pd.Timestamp(source.get("Time"))
     difference = association.get("waveform_start_offset_seconds")
     associated_start = waveform.get("starttime")
     if (not isinstance(associated_start, UTCDateTime)
@@ -99,7 +101,11 @@ def write_verified_sac(trace, path):
     if _float32_value(trace.stats.calib, f"{trace.id}: calib") == -12345:
         raise ValueError(f"{trace.id}: calib collides with the SAC undefined value")
 
-    headers = {"stel": 0.0}
+    elevation = source.get("Elevation")
+    if (metadata.field_units.get("Elevation") != "meters" or elevation is None
+            or pd.isna(elevation) or not isfinite(float(elevation)) or elevation != 0):
+        raise ValueError(f"{trace.id}: requires explicit zero Recording Elevation in meters")
+    headers = {"stel": float(elevation)}
     for field, key, unit, lower, upper in (
         ("Latitude", "stla", "degrees_north", -90, 90),
         ("Longitude", "stlo", "degrees_east", -180, 180),
@@ -129,12 +135,6 @@ def write_verified_sac(trace, path):
         if pressure != 0 and headers["stdp"] == 0:
             raise ValueError(f"{trace.id}: stdp underflows before SAC float32 storage")
         _float32_value(headers["stdp"], f"{trace.id}: stdp")
-
-    # Keep the exact frozen consumer supported. Its public exporter retains
-    # these checks and creates the headers; no private consumer imports are used.
-    if hasattr(geocsv, "write_sac"):
-        geocsv.write_sac(trace, path)
-        return
 
     projected = trace.stats.get("sac")
     if not isinstance(projected, Mapping):

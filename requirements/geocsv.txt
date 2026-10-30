@@ -1,7 +1,6 @@
-# Historical scientific/download baseline; update only with an explicit review.
-# New hyphenated-path publication requires consumer >= 0.26.0; see
-# docs/geocsv/release-path-review.md for selecting the current local source.
-mermaid-geocsv[obspy] @ git+https://github.com/Bathymetrix/mermaid-geocsv.git@33ed5ff477b6c44447d472fc8e828b5ae930e0db
+# Schema 1.0.0 requires the migrated consumer. Before release, install the
+# adjacent local checkout in the same pip invocation (see README).
+mermaid-geocsv[obspy]>=0.27.0
 numpy==2.5.3
 pandas==3.0.6
 obspy==1.5.1

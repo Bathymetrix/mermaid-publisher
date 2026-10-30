@@ -119,11 +119,8 @@ def create_snapshot(source_root, workspace, inventory_path, previous_manifest=No
         snapshots.mkdir(parents=True, exist_ok=True)
         destination = snapshots / release_component(release)
         historical = snapshots / quote(release, safe="")
-        if historical.exists():
-            verify_candidate(historical)
-            if ((historical / "manifest.json").read_bytes() != payload
-                    or (historical / "source_provenance.json").read_bytes() != provenance_payload):
-                raise FileExistsError(f"conflicting immutable historical snapshot: {historical}")
+        if historical != destination and historical.exists():
+            raise ValueError("unsupported encoded snapshot directory; select a new release identity")
         if destination.exists():
             verify_candidate(destination)
             if (destination / "manifest.json").read_bytes() != payload:

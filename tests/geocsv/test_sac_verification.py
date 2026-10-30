@@ -5,7 +5,7 @@ The same checks run with the exact frozen consumer and the current consumer.
 """
 
 from dataclasses import replace
-import inspect
+from geocsv.schema_helpers import HEADER
 from pathlib import Path
 import sys
 import tempfile
@@ -28,18 +28,14 @@ class SACVerification(unittest.TestCase):
         self.addCleanup(temporary.cleanup)
         self.root = Path(temporary.name)
         self.output = self.root / "checked.sac"
-        self.current = "create_sac_header" in inspect.signature(geocsv.associate).parameters
         self.trace = self.associated()
 
     def associated(self, *, clipped=False, empty_location=False, submicrosecond=False):
-        start = "2025-01-01T00:00:00.123456789Z" if submicrosecond else "2025-01-01T00:00:00Z"
+        start = "2025-01-01T00:00:00.123456Z" if submicrosecond else "2025-01-01T00:00:00.000000Z"
         location = "" if empty_location else "00"
-        content = (
-            "#dataset: GeoCSV\n"
-            "#field_type: string,datetime,string,string,string,string,string,float,float,float,float,integer\n"
-            "#field_unit: unitless,iso8601,unitless,unitless,unitless,unitless,unitless,degrees_north,degrees_east,mbar,hertz,unitless\n"
-            "MethodIdentifier,StartTime,Network,Station,Location,Channel,DataQuality,Latitude,Longitude,WaterPressure,SampleRate,SampleCount\n"
-            f"Algorithm(event):synthetic:v0,{start},MH,SYN01,{location},BDH,Q,12,-150,10000,20,4\n"
+        source_location = '"  "' if empty_location else location
+        content = (HEADER +
+            f"Derivation:Recording:automaid-v0,{start},MH,SYN01,{source_location},BDH,Q,12,-150,0,10000,MERMAID_synthetic,20,4,,0\n"
         ).encode()
         trace = Trace(np.array([0, 1, -10, 16777217], dtype=np.int32), header={
             "network": "MH", "station": "SYN01", "location": location, "channel": "BDH",
@@ -49,8 +45,7 @@ class SACVerification(unittest.TestCase):
         if clipped:
             trace.stats.starttime += trace.stats.delta
             trace.data = trace.data[1:].copy()
-        options = {"create_sac_header": True} if self.current else {}
-        geocsv.associate(trace, geocsv.read(content), allow_first_segment=clipped, **options)
+        geocsv.associate(trace, geocsv.read(content), allow_first_segment=clipped, create_sac_header=True)
         return trace
 
     def rejected(self, trace, expression=None):
@@ -116,7 +111,7 @@ class SACVerification(unittest.TestCase):
         self.rejected(trace, "association-time loaded sample count")
 
     def test_incomplete_source_identity_count_start_and_quality_rejected(self):
-        for key in ("Station", "SampleCount", "StartTime", "DataQuality"):
+        for key in ("Station", "SampleCount", "Time", "DataQuality"):
             trace = self.trace.copy()
             trace.stats.geocsv[key] = pd.NA
             if key == "DataQuality":
@@ -145,9 +140,8 @@ class SACVerification(unittest.TestCase):
         trace = self.trace.copy()
         trace.stats.geocsv.WaterPressure = pd.NA
         trace.stats.geocsv.DataQuality = "D"
-        if self.current:
-            # Synthetic projected REQ case, independently checked against source D.
-            trace.stats.sac.stdp = -12345.0
+        # Synthetic projected REQ case, independently checked against source D.
+        trace.stats.sac.stdp = -12345.0
         write_verified_sac(trace, self.output)
         self.assertIsNone(SACTrace.read(str(self.output)).stdp)
 
@@ -222,8 +216,6 @@ class SACVerification(unittest.TestCase):
         self.assertEqual(trace.stats, before.stats)
 
     def test_projected_headers_are_verified_without_repair(self):
-        if not self.current:
-            self.skipTest("the fixed baseline constructs its header inside write_sac")
         for key in ("stla", "stlo", "stel", "stdp", "scale"):
             trace = self.trace.copy()
             trace.stats.sac[key] = 999

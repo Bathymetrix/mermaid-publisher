@@ -4,7 +4,6 @@
 import argparse
 from datetime import datetime, timezone
 import json
-import inspect
 from pathlib import Path
 import sys
 import tempfile
@@ -90,6 +89,8 @@ def validate_snapshot(candidate, source_root, report_path, *, batch_size=128, pr
         raise RuntimeError("full-archive validation requires Python 3.11+")
     from mermaid import geocsv
     from obspy import Stream, read as read_waveforms
+    if tuple(int(part) for part in geocsv.__version__.split('.')) < (0, 27, 0):
+        raise RuntimeError("schema 1.0.0 validation requires mermaid-geocsv >= 0.27.0")
 
     if type(batch_size) is not int or batch_size < 1:
         raise ValueError("batch_size must be a positive integer")
@@ -148,7 +149,7 @@ def validate_snapshot(candidate, source_root, report_path, *, batch_size=128, pr
                 progress(f"{instrument}: {len(selected)} original waveform pairs")
             try:
                 tables = geocsv.read(candidate / entry["filename"])
-                item["event_records"] = sum(int(table["MethodIdentifier"].str.startswith("Algorithm(event)", na=False).sum()) for table in tables)
+                item["recording_records"] = sum(int(table["MethodIdentifier"].str.startswith("Derivation:Recording:", na=False).sum()) for table in tables)
             except Exception as exc:
                 fail(instrument, None, "read_geocsv", exc)
                 item["status"] = "failed"
@@ -182,13 +183,9 @@ def validate_snapshot(candidate, source_root, report_path, *, batch_size=128, pr
                         fail(instrument, pair, "read_mseed", exc)
                 if loaded:
                     try:
-                        # Baseline 0.24.0 keeps its public exporter; current
-                        # consumers explicitly create SAC headers at association.
-                        options = ({"create_sac_header": True}
-                                   if "create_sac_header" in inspect.signature(geocsv.associate).parameters else {})
                         geocsv.associate(Stream([trace for _, trace in loaded]), tables,
                                          time_tolerance=LIMITS["association_time_seconds"],
-                                         allow_first_segment=False, **options)
+                                         allow_first_segment=False, create_sac_header=True)
                     except Exception as exc:
                         # The public API is transactional. A failed batch has no accepted associations.
                         for pair, _ in loaded:

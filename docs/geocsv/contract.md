@@ -1,14 +1,25 @@
 # GeoCSV publication and download agreement
 
-This document is the canonical GeoCSV producer/consumer agreement. The fixed
-historical scientific/download consumer baseline is mermaid-geocsv 0.24.0 at commit
+This document is the canonical GeoCSV publication/download agreement.
+Payload semantics for the local replacement are defined by
+[MERMAID GeoCSV schema 1.0.0](../../../mermaid-geocsv/docs/format-spec.md), with
+implementation sequenced in the [four-repository plan](../../../automaid/docs/geocsv-migration-plan.md).
+That target supports only the new schema and migrated consumer: no active legacy
+reader/writer paths, aliases or fallback. The specification includes the exact
+header, field requirements, missingness and literal Recording Elevation `0`
+with unit `meters`. Automaid v4.6.0 and consumer 0.27.0 implement these payload changes locally;
+existing hosted bytes remain old-format and incompatible with the new-only reader.
+Manifest fields, literal release identity and the hyphenated-path protocol
+remain unchanged. Older consumer paths described below are current or
+historical implementation evidence, not requirements for the replacement.
+
+The fixed historical scientific/download consumer baseline is mermaid-geocsv 0.24.0 at commit
 `33ed5ff477b6c44447d472fc8e828b5ae930e0db`. Owning this document does not permit
 silent producer/consumer changes: retain historical fixtures and review
 protocol changes explicitly across repositories. The authorized
 [2026-10-28 path review](release-path-review.md) requires consumer >= 0.26.0
 for the replacement timestamped testing collection. The frozen baseline is
-retained for historical downloads and scientific compatibility, not the new
-path protocol.
+retained as historical evidence, without an active legacy-consumer requirement.
 
 The [2026-10-26 compatibility review](consumer-baseline-review.md) adopts this
 revision after an identical reader-module rename and import updates. The
@@ -22,19 +33,17 @@ requires fresh evidence matching the active installed consumer.
 publication gate, transfer and local recording. `mermaid-geocsv` owns public
 fetch/read/associate APIs and optional SAC station location projection.
 The publisher owns export verification and uses ObsPy for current-consumer
-writing; the frozen 0.24.0 consumer keeps its public exporter compatibility
-path. Automaid owns scientific source generation. `bathymetrix-site` owns its read-only download
+writing; the frozen 0.24.0 exporter remains historical evidence only. Automaid owns scientific source generation. `bathymetrix-site` owns its read-only download
 service, landing page and hosting runbook. Hosting can change independently.
 
 Repository version, validation-report schema and download compatibility are
-separate concerns. Report schema 3 is a local evidence revision independent of download-path
-changes. Publisher 0.3.0 and consumer 0.26.0 implement the explicitly reviewed
+separate concerns. Report schema 4 names `recording_records` in instrument summaries; all
+scientific limits remain unchanged. Historical schema-3 reports retain their meaning. Publisher 0.3.0 and consumer 0.26.0 implement the explicitly reviewed
 hyphenated path protocol; manifest fields and scientific release IDs are unchanged.
 
 Consumer 0.25.0 removes its public writer and adds `create_sac_header`. This
 scientific API migration does not change the fixed fetch baseline, historical
-fixtures, manifests, URLs or byte semantics. The publisher supports both
-consumer paths; [SAC verification](sac-verification.md) records every retained
+fixtures, manifests, URLs or byte semantics. The active publisher requires consumer >= 0.27.0, with no historical exporter path; [SAC verification](sac-verification.md) records every retained
 check. Evidence remains bound to the exact installed software.
 
 ## Current publication phase: testing only
@@ -164,7 +173,7 @@ Staging schema 1 retains complete-source accounting for default creation.
 Staging schema 2 adds a sorted, nonempty, unique `instrument_ids` array for
 explicit selections; its instrument entries must cover exactly that selection,
 including recordless exclusions. Both versions remain supported. The public
-manifest/download format and validation-report schema 3 are unchanged.
+manifest/download format and manifest/download format is unchanged; validation-report schema 4 records the migration.
 
 The creator emits entries sorted by ID. Source provenance uses a
 processed-root-relative `source_path` (`<serial>/geo_DET_REQ.csv`) and
@@ -206,7 +215,7 @@ update latest last. Failures before activation leave the previous latest selecte
 An unconfirmed activation requires inspecting remote state before retrying. Serialize
 publication and use conditional object writes to prevent conflicting updates.
 
-The publisher owns `scripts/geocsv/validate_snapshot.py`, the version 3 report
+The publisher owns `scripts/geocsv/validate_snapshot.py`, the version 4 report
 format and `scripts/geocsv/gate_snapshot.py`. Validation covers every original
 MiniSEED and independently read paired SAC for included instruments; `.mhpsd`
 spectra are outside scope and are not counted. Missing pairs, unsupported
@@ -254,3 +263,17 @@ scoped archive Git commit. Receipts and inventories are not public release
 objects. Publication success and local recording failure are separate outcomes;
 `--record-only` finishes recording without network writes. No automatic pushes
 are performed. See [the workflow](workflow.md).
+
+## Locally implemented schema 1.0.0 migration
+
+Publisher 0.4.0 selects `Derivation:Recording:` rows and reads `Time`. Scientific
+validation requires consumer >= 0.27.0. Final-waveform checks verify the source's
+explicit Recording Elevation, including SAC `stel`; no elevation default is used.
+Finite signed Pressure-Absolute sensor readings are preserved by the consumer;
+Recording/crossing pressures and all station-depth projections remain nonnegative.
+Historical consumers, encoded candidate paths and receipt recovery aliases are
+unsupported. Frozen historical reports and downloads remain source evidence.
+
+Local candidate creation/validation uses `testing_only: true` and truthful ordinary
+source-directory provenance. New bytes have new shared six-digit creation/release
+identities. No upload, pointer change, archive commit, deployment or release follows.

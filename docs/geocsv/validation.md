@@ -1,9 +1,9 @@
-# GeoCSV snapshot validation and report version 3
+# GeoCSV snapshot validation and report version 4
 
 `mermaid-publisher/scripts/geocsv/validate_snapshot.py` orchestrates the public
 `mermaid-geocsv` read → associate(create_sac_header=True) APIs, followed by
-publisher-only export checks and ObsPy writing. The frozen 0.24.0 consumer
-retains its existing public-exporter compatibility path. Validation requires Python 3.11+,
+publisher-only export checks and ObsPy writing. Consumer >= 0.27.0 and payload
+schema 1.0.0 are required; historical exporter paths are unsupported. Validation requires Python 3.11+,
 `mermaid-geocsv` with its ObsPy extra, and original local MiniSEED/SAC inputs.
 The source tree is read-only. Temporary exports, frozen products and reports
 may use an ordinary temporary workspace, separate from the source tree and
@@ -52,7 +52,7 @@ run rather than being silently omitted. Default creation retains staging schema
 1 and complete-source accounting. Explicit selections use staging schema 2,
 whose `instrument_ids` must match exactly the instrument entries; unselected
 instruments are outside validation scope. The sidecar hash binds that frozen
-scope without changing report schema 3. Empty GeoCSV files and the staging
+scope without changing report schema 4. Empty GeoCSV files and the staging
 sidecar are never uploaded. The public report records only the sidecar hash and
 recordless-exclusion count, not the excluded payloads.
 
@@ -89,7 +89,7 @@ absolute clock accuracy. Absolute start times are compared, not a particular
 split between SAC reference time and `b`.
 
 The package owns the geographic projection: latitude in degrees_north, longitude
-in degrees_east, sea-level STEL=0 metres, and approximate depth from WaterPressure
+in degrees_east, explicit source Recording Elevation=0 metres for STEL, and approximate depth from WaterPressure
 in mbar divided by 100. This reproduces the producer's convention, not a physical
 pressure-to-depth model. REQ source quality D may omit pressure; depth remains
 undefined, without borrowing another record's value. Missing DET pressure fails
@@ -98,7 +98,7 @@ independent verification and all former exporter guards are retained in
 [`_verify_sac.py`](sac-verification.md).
 
 The report also fingerprints `_verify_sac.py`; changing its checks invalidates
-old acceptance evidence without changing schema 3 or scientific tolerances.
+old acceptance evidence without changing schema 4 or scientific tolerances.
 The [migration inventory](sac-verification.md#verification-migration-inventory)
 accounts for every former exporter test.
 
@@ -110,11 +110,11 @@ or counts-to-pressure conversion.
 ## Report schema
 
 A UTF-8 JSON object has `schema: "bathymetrix-geocsv-archive-validation"` and integer
-`schema_version: 3`. Unknown versions are rejected. Version 3 retains the schema identifier and all scientific limits, replaces
-`software.website_code_sha256` with `software.publisher_code_sha256`, adds
-`software.mermaid-publisher`, and requires `source_provenance_sha256` binding
-immutable snapshot provenance. Historical version-2 reports remain unchanged
-and cannot satisfy the version-3 gate. JSON creation rejects NaN and
+`schema_version: 4`. Unknown versions are rejected. Version 4 retains the
+schema identifier, source-provenance binding, publisher/package fingerprints and
+all scientific limits from version 3. The instrument summary count is now
+`recording_records`, selected using `Derivation:Recording:`. Historical version-2
+and version-3 reports remain unchanged and cannot satisfy the version-4 gate. JSON creation rejects NaN and
 infinity. Reports are created exclusively, retained separately from the frozen
 manifest, and use source-relative identifiers without machine-specific roots.
 
@@ -129,7 +129,7 @@ manifest, and use source-relative identifiers without machine-specific roots.
 | `limits` | Exact versioned scientific rule values and comparison descriptions |
 | `software` | Python, mermaid-geocsv, NumPy, pandas and ObsPy versions; publisher version, workflow code and package Python source hashes |
 | `source_files` | Complete sorted included-input inventory: instrument ID, source-relative path, kind, byte count and SHA-256 |
-| `instruments` | Every included instrument, pair count, parsed event-row count when available, and completion status |
+| `instruments` | Every included instrument, pair count, parsed `recording_records` count when available, and completion status |
 | `pairs` | Every expected pair, paths, outcome, per-check results, measurements and strict association source-row evidence |
 | `failures` | Instrument, pair ID, stage and diagnostic for every reported failure |
 | `summary` | Recomputable input/pair counts and passed/failed/missing/unsupported/unexamined counts |
@@ -197,3 +197,11 @@ report retained in the external publication archive, separate from the software 
 a failed full run does not authorize a production candidate. Package defects
 need source-relative reproductions using public APIs and the exact candidate,
 file fingerprints, versions, affected pair and comparison measurements.
+
+## Payload migration
+
+Publisher 0.4.0 requires consumer >= 0.27.0 and MERMAID payload schema 1.0.0.
+Report revision 4 renames the instrument count to `recording_records`. Stored
+schema-3 reports remain historical and do not accept new candidates. Scientific
+comparison rules and numeric limits are unchanged. Source Recording Elevation
+must explicitly supply zero metres; final SAC `stel` is checked against it.
