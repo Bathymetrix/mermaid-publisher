@@ -27,6 +27,17 @@ original baseline fingerprints and historical download fixtures remain retained.
 Existing archived reports describe their original software; future publication
 requires fresh evidence matching the active installed consumer.
 
+Current producer source is automaid v4.6.2. The initial schema implementation
+was v4.6.0; subsequent v4.6.1 correction-field rounding and v4.6.2 per-record
+read-back checks are documented in [the clock matrix](../../../automaid/docs/clock-timing-matrix.md).
+The canonical corpus was regenerated on 2026-10-30. Earlier acceptance reports
+do not accept these new bytes; fresh local evidence is required. Hosted
+old-format payloads and production inactivity are unchanged.
+
+Fresh regenerated-corpus evidence is recorded in [the 2026-10-30 validation findings](regenerated-corpus-validation.md):
+43,365/43,365 pairs passed report schema 4 and its acceptance gate. This local
+testing-only result does not authorize publication or accept different bytes.
+
 ## Ownership
 
 `mermaid-publisher` owns creation, archive validation, its report schema,
@@ -118,9 +129,10 @@ component. Literal colons and percent-encoded components are rejected before
 cache lookup. No URL decoding or legacy aliases are required. Equivalent
 instants with different fractional spellings remain distinct release IDs.
 Token IDs remain supported unchanged for illustrative client/Worker tests only.
-Historical local encoded directories remain readable for archive verification
-and receipt recovery; new snapshots use hyphens, and creation checks both
-layouts for same-identity byte conflicts. Existing local downloads are not moved.
+Historical local encoded directories remain immutable evidence, but active
+candidate verification and receipt recovery reject them. New snapshots use
+hyphens; creation rejects an existing encoded directory for the same identity.
+Existing local downloads are not moved.
 
 ## Exact manifest protocol
 
