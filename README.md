@@ -75,6 +75,11 @@ the deployed Worker, receipt and local archive commit. Further uploads and
 production promotion still require explicit authorization.
 No credentials or private deployment configuration belong in either Git repository.
 
+The schema 1.0.0 P0006/P0045 testing snapshot was published on 2026-10-30
+with publisher 0.4.2 and consumer 0.27.0 after all 3,292 original waveform pairs
+passed fresh validation. Testing latest selects `2026-10-30T18:08:32.316000Z`.
+See [publication and download verification](docs/geocsv/schema1-testing-publication.md).
+
 ## Documentation
 
 - [Create, validate, gate, publish and recover](docs/geocsv/workflow.md)

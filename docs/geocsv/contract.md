@@ -8,7 +8,8 @@ That target supports only the new schema and migrated consumer: no active legacy
 reader/writer paths, aliases or fallback. The specification includes the exact
 header, field requirements, missingness and literal Recording Elevation `0`
 with unit `meters`. Automaid v4.6.0 and consumer 0.27.0 implement these payload changes locally;
-existing hosted bytes remain old-format and incompatible with the new-only reader.
+testing latest now selects the compatible P0006/P0045 snapshot published on
+2026-10-30; prior old-format snapshots remain historical bytes.
 Manifest fields, literal release identity and the hyphenated-path protocol
 remain unchanged. Older consumer paths described below are current or
 historical implementation evidence, not requirements for the replacement.
@@ -31,8 +32,9 @@ Current producer source is automaid v4.6.2. The initial schema implementation
 was v4.6.0; subsequent v4.6.1 correction-field rounding and v4.6.2 per-record
 read-back checks are documented in [the clock matrix](../../../automaid/docs/clock-timing-matrix.md).
 The canonical corpus was regenerated on 2026-10-30. Earlier acceptance reports
-do not accept these new bytes; fresh local evidence is required. Hosted
-old-format payloads and production inactivity are unchanged.
+do not accept these new bytes; fresh local evidence is required. The
+P0006/P0045 schema 1.0.0 testing snapshot was separately authorized and
+published on 2026-10-30. Production remains inactive.
 
 Fresh regenerated-corpus evidence is recorded in [the 2026-10-30 validation findings](regenerated-corpus-validation.md):
 43,365/43,365 pairs passed report schema 4 and its acceptance gate. This local
@@ -71,7 +73,10 @@ P0006/P0045 testing snapshot `2026-10-21T22:48:33.277Z` was published on
 under hyphenated paths and selected by testing latest, with fresh scientific
 evidence. The four old testing objects and encoded URLs were retired. See the
 [path review and replacement evidence](release-path-review.md). Production
-remains inactive.
+remains inactive. On 2026-10-30, testing latest selected the new schema 1.0.0
+P0006/P0045 snapshot `2026-10-30T18:08:32.316000Z` after fresh acceptance of
+all 3,292 original waveform pairs. Prior snapshots remain unchanged; see
+[publication evidence](schema1-testing-publication.md).
 The public landing page identifies that scope, provides the MH network DOI
 (10.7914/SN/MH), and states that initial workflow tests may be retired after
 verification. Infrastructure deployment, landing-page publication and test

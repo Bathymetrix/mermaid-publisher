@@ -167,8 +167,8 @@ hosted inventory requires a new upstream timestamp, not an edited manifest.
 Using the candidate ID printed by creation, set a task-specific shell variable:
 
 ```bash
-GEOCSV_CANDIDATE="$MERMAID/publisher/geocsv/testing/snapshots/2026-10-21T22%3A48%3A33.277Z"
-GEOCSV_REPORT="$MERMAID/publisher/geocsv/testing/validation/2026-10-21T22%3A48%3A33.277Z/validation-v3.json"
+GEOCSV_CANDIDATE="$MERMAID/publisher/geocsv/testing/snapshots/2026-10-30T18-08-32.316000Z"
+GEOCSV_REPORT="$MERMAID/publisher/geocsv/testing/validation/2026-10-30T18-08-32.316000Z/validation-new-attempt.json"
 .venv/bin/python scripts/geocsv/validate_snapshot.py \
   --candidate "$GEOCSV_CANDIDATE" --source-root "$MERMAID/processed" \
   --report "$GEOCSV_REPORT"
@@ -316,6 +316,11 @@ before retrying. Identical immutable retries
 reuse objects; conflicts never overwrite them.
 
 ## Status and verification
+
+Testing latest selects the schema 1.0.0 P0006/P0045 snapshot
+`2026-10-30T18:08:32.316000Z`, published on 2026-10-30 after fresh report-4
+acceptance of 3,292 pairs. Exact public bytes, fetch/read/associate, production
+isolation and scoped archive recording passed; see [publication findings](schema1-testing-publication.md).
 
 Publisher 0.3.0/report schema 3 preserve scientific comparison rules from the
 website's schema-2 workflow. Historical 43,365-pair acceptance is retained as
