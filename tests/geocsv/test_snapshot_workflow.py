@@ -8,6 +8,7 @@ import os
 from pathlib import Path
 import sys
 import tempfile
+import tarfile
 import subprocess
 import unittest
 from unittest.mock import Mock, patch
@@ -346,7 +347,8 @@ class Publication(unittest.TestCase):
     def test_upload_order_exact_retry_and_latest_last(self):
         self.transfer()
         self.assertTrue(self.store.writes[0].endswith("P0006.geocsv"))
-        self.assertTrue(self.store.writes[1].endswith("manifest.json"))
+        self.assertTrue(self.store.writes[1].endswith(publisher.BUNDLE_FILENAME))
+        self.assertTrue(self.store.writes[2].endswith("manifest.json"))
         self.assertEqual(self.store.writes[-1], "geocsv/testing/latest.json")
         self.assertIn(COMPONENT, self.store.writes[0])
         self.assertIn(COMPONENT, self.https.call_args_list[0].args[0])
@@ -357,6 +359,21 @@ class Publication(unittest.TestCase):
         self.store.writes.clear()
         self.transfer()
         self.assertEqual(self.store.writes, ["geocsv/testing/latest.json"])
+
+    def test_bundle_conflict_blocks_all_remote_writes(self):
+        self.store.data[f"geocsv/testing/releases/{COMPONENT}/{publisher.BUNDLE_FILENAME}"] = b"conflicting bundle"
+        with self.assertRaisesRegex(FileExistsError, "immutable remote object conflicts"):
+            self.transfer()
+        self.assertEqual(self.store.writes, [])
+
+    def test_bundle_change_blocks_latest(self):
+        def mutate(*args):
+            path = self.workspace / "testing/bundles" / COMPONENT / publisher.BUNDLE_FILENAME
+            path.write_bytes(b"changed")
+        self.https.side_effect = mutate
+        with self.assertRaisesRegex(ValueError, "bundle changed"):
+            self.transfer()
+        self.assertNotIn("geocsv/testing/latest.json", self.store.data)
 
     def test_upload_failure_leaves_latest_absent_and_retry_resumes(self):
         self.store.fail_on = f"geocsv/testing/releases/{COMPONENT}/manifest.json"

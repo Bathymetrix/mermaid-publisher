@@ -62,6 +62,7 @@ geocsv/
     snapshots/{release component}/   GeoCSV, manifest.json, source_provenance.json
     staging/{release component}/     inventory.json, including recordless exclusions
     validation/{release component}/  exclusive, distinct report attempts
+    bundles/{release component}/     MERMAID.geocsv.tar.gz
     publications/              successful-publication receipts
 ```
 
@@ -245,7 +246,8 @@ authorization gates still apply.
 
 ## Publication and recording
 
-The publisher gates current evidence, uploads immutable payloads, then manifest
+The publisher gates current evidence, builds the instrument bundle, uploads
+immutable payloads and `MERMAID.geocsv.tar.gz`, then manifest
 and validation.json; verifies exact public bytes and explicitly pinned fetch;
 rechecks the gate; then conditionally updates and confirms latest. A lock in the
 external workspace serializes operators. A crash leaves the lock for manual
@@ -253,13 +255,23 @@ inspection. Never remove a lock without inspecting remote state.
 
 After confirmed publication, write a receipt containing snapshot ID, public URL,
 object prefix, manifest/provenance/report/inventory hashes and completion time.
-Commit exactly that snapshot, its staging inventory, selected report, receipt
+Commit exactly that snapshot, its staging inventory, selected report, bundle, receipt
 and the archive's `.gitattributes`. The required `* -text -filter -ident` rule
 preserves exact Git blob bytes, including CRLF, regardless of automatic newline
 conversion settings.
 Preserve unrelated staged/unstaged archive work. Identical retries reuse the
 existing receipt when the same release was already selected; later activations
 create new events. Never push automatically.
+
+The bundle lives under `testing/bundles/{release component}/` and contains only
+the manifested GeoCSV files. It does not enter the frozen candidate, instrument
+manifest or scientific report. Receipts with `bundle_filename` bind its fixed
+name; recording checks member bytes against existing manifest hashes. Recovery
+for receipts without a bundle is unchanged. `--plan` does not create a bundle.
+
+Local bundle and release-directory support in publisher 0.5.0 and the Worker
+does not establish deployed availability. Existing hosted snapshots are not
+backfilled automatically; Worker deployment and uploads require authorization.
 
 Remote publication and local Git recording are separate transactions. A local
 recording failure exits 2 with `published; local recording incomplete`. Its

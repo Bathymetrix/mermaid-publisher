@@ -53,6 +53,7 @@ latest/<instrument_id>.geocsv
 releases/<release-component>/manifest.json
 releases/<release-component>/<instrument_id>.geocsv
 releases/<release-component>/validation.json
+releases/<release-component>/MERMAID.geocsv.tar.gz
 ```
 
 Convenience latest file paths return temporary 302 redirects. Fetch resolves
@@ -169,8 +170,36 @@ intent. Original waveform archives are not copied.
 
 Latest responses and redirects bypass caches. Successful immutable objects are
 cached deliberately; misses/errors are not. Downloads honor
-`Accept-Encoding: identity` with exact bytes and no transformation. Compression
-is outside this protocol; coordinate any change before implementation.
+`Accept-Encoding: identity` with exact bytes and no transformation. Individual
+GeoCSV payloads remain uncompressed.
+
+## Snapshot bundle and browser directories
+
+`MERMAID.geocsv.tar.gz` is a derived download containing exactly the instrument
+files in that snapshot's manifest, at archive root with unchanged names and
+bytes. No reports, manifests, source provenance or waveform archives are included.
+Its directory carries the full snapshot identity; the filename has no date.
+It is outside `manifest.files`, with no bundle field or hash added to the
+manifest or scientific report. Member names, sizes and bytes are checked against
+the existing manifest; SDK and HTTPS transfer checks apply to the stored bundle.
+
+The publisher builds the bundle during publication, after scientific acceptance,
+using sorted members and fixed archive metadata. It retains the immutable bundle
+under `testing/bundles/<release-component>/`, outside the frozen candidate.
+Identical retries reuse it. New publication receipts record `bundle_filename`;
+recording and network-free recovery verify its members and include it in the
+scoped archive commit. Existing receipts without that field remain unchanged.
+
+The Worker accepts only the exact bundle filename and serves it as
+`application/gzip`, with an attachment filename, no HTTP content encoding and
+the same immutable caching policy as the individual files. Bundle availability
+does not affect `geocsv.fetch`, which remains manifest-driven.
+
+Browser collection pages show a plain clickable directory tree. Each
+`releases/<release-component>/` page lists the manifest and instrument files,
+plus validation and bundle links when those objects exist. Listings are
+read-only and no-store. Missing release manifests return 404. Existing hosted
+snapshots need no manifest change; adding a bundle requires an authorized upload.
 
 ## Scientific publication gate
 

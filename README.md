@@ -35,9 +35,14 @@ integrity, acceptance and export-verification modules.
 Create and validate accept ordinary temporary workspaces without Git or
 publication intent. Actual publication requires the dedicated Git archive
 `$MERMAID/publisher`, with artifacts under
-`geocsv/testing/{snapshots,staging,validation,publications}`. Sources remain
+`geocsv/testing/{snapshots,staging,validation,bundles,publications}`. Sources remain
 read-only; original waveform archives are not copied. Selection is frozen at
 creation; validation and transfer cover that exact inventory.
+
+Publication also builds `MERMAID.geocsv.tar.gz` from the manifested instrument
+files. The bundle is served beside them, outside `manifest.files`; individual
+hashes and the scientific report are unchanged. Archive pages use a plain
+clickable directory tree, with a page for each release directory.
 
 All hosted data are **testing only**. The approved hosted scope is P0006/P0045;
 full-corpus licensing remains unresolved. Scientific acceptance does not

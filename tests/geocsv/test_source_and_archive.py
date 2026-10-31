@@ -230,9 +230,22 @@ class PublicationCommand(unittest.TestCase):
         self.assertEqual(self.store.writes[-1], "geocsv/testing/latest.json")
         self.assertFalse(any("source_provenance.json" in key for key in self.store.data))
         self.assertEqual(len(list((self.work / "testing/publications").glob("*.json"))), 1)
+        bundle = self.work / "testing/bundles" / self.candidate.name / publisher.BUNDLE_FILENAME
+        relative = bundle.relative_to(self.archive).as_posix()
+        content = subprocess.run(["git", "-C", str(self.archive), "show", f"HEAD:{relative}"], check=True, capture_output=True).stdout
+        self.assertEqual(content, bundle.read_bytes())
         head = git(self.archive, "rev-parse", "HEAD")
         self.invoke()
         self.assertEqual(git(self.archive, "rev-parse", "HEAD"), head)
+
+    def test_receipt_recovery_checks_bundle_members(self):
+        self.invoke()
+        receipt = next((self.work / "testing/publications").glob("*.json"))
+        self.assertEqual(json.loads(receipt.read_bytes())["bundle_filename"], publisher.BUNDLE_FILENAME)
+        bundle = self.work / "testing/bundles" / self.candidate.name / publisher.BUNDLE_FILENAME
+        bundle.write_bytes(b"corrupted bundle")
+        with self.assertRaisesRegex(ValueError, "cannot read instrument bundle"):
+            publisher.commit_publication(receipt)
 
     def test_source_change_prevents_remote_writes(self):
         self.geo.write_bytes(self.geo.read_bytes() + b"#changed\n")

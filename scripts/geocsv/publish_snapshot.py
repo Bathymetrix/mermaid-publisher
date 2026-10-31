@@ -3,11 +3,13 @@
 
 import argparse
 from contextlib import contextmanager
+import gzip
 import hashlib
 import json
 import os
 from pathlib import Path
 import tempfile
+import tarfile
 from datetime import datetime, timezone
 from urllib.parse import quote, urlsplit
 from urllib.request import Request, urlopen
@@ -17,6 +19,60 @@ from gate_snapshot import AcceptanceError, require_acceptance
 
 
 AcceptanceUnavailable = AcceptanceError  # Retain the private preflight exception name.
+BUNDLE_FILENAME = "MERMAID.geocsv.tar.gz"
+
+
+def verify_bundle(path, manifest):
+    """Check archive members against the instrument manifest."""
+    entries = sorted(manifest["files"], key=lambda entry: entry["filename"])
+    try:
+        with tarfile.open(path, "r:gz") as archive:
+            members = archive.getmembers()
+            if [member.name for member in members] != [entry["filename"] for entry in entries]:
+                raise ValueError("bundle inventory differs from manifest")
+            for member, entry in zip(members, entries):
+                if not member.isfile() or member.size != entry["size_bytes"]:
+                    raise ValueError("bundle member differs from manifest")
+                checksum = hashlib.sha256()
+                with archive.extractfile(member) as stream:
+                    while chunk := stream.read(1024 * 1024):
+                        checksum.update(chunk)
+                if checksum.hexdigest() != entry["sha256"]:
+                    raise ValueError("bundle member differs from manifest")
+    except (tarfile.TarError, EOFError, OSError) as exc:
+        raise ValueError("cannot read instrument bundle") from exc
+
+
+def create_bundle(candidate):
+    """Build an immutable, deterministic instrument bundle."""
+    candidate = Path(candidate)
+    manifest = verify_candidate(candidate)
+    directory = candidate.parent.parent / "bundles" / candidate.name
+    directory.mkdir(parents=True, exist_ok=True)
+    destination = directory / BUNDLE_FILENAME
+    if destination.exists():
+        if destination.is_symlink():
+            raise FileExistsError("conflicting immutable bundle")
+        try:
+            verify_bundle(destination, manifest)
+        except ValueError:
+            raise FileExistsError("conflicting immutable bundle") from None
+        return destination
+    with tempfile.TemporaryDirectory(prefix=".bundle-", dir=directory) as temporary:
+        path = Path(temporary) / BUNDLE_FILENAME
+        with path.open("xb") as raw, gzip.GzipFile(filename="", fileobj=raw, mode="wb", mtime=0) as compressed:
+            with tarfile.open(fileobj=compressed, mode="w|", format=tarfile.USTAR_FORMAT) as archive:
+                for entry in sorted(manifest["files"], key=lambda entry: entry["filename"]):
+                    member = tarfile.TarInfo(entry["filename"])
+                    member.size = entry["size_bytes"]
+                    member.mode = 0o644
+                    with (candidate / member.name).open("rb") as stream:
+                        archive.addfile(member, stream)
+        verify_bundle(path, manifest)
+        if verify_candidate(candidate) != manifest:
+            raise ValueError("candidate changed during bundle creation")
+        path.rename(destination)
+    return destination
 
 
 class PublicationOutcomeUnknown(RuntimeError):
@@ -55,7 +111,8 @@ class R2Store:
         with Path(path).open("rb") as stream:
             self.client.put_object(
                 Bucket=self.bucket, Key=key, Body=stream, **condition,
-                ContentType="application/json" if key.endswith(".json") else "text/csv; charset=utf-8",
+                ContentType=("application/gzip" if key.endswith(".tar.gz") else
+                             "application/json" if key.endswith(".json") else "text/csv; charset=utf-8"),
                 CacheControl="public, max-age=31536000, immutable, no-transform" if immutable else "no-store",
             )
 
@@ -148,6 +205,9 @@ def _transfer_and_verify(candidate, report, store, base_url, *, object_prefix, a
         if missing:
             raise ValueError(f"previously published instruments missing: {sorted(missing)}")
     paths = [(entry["filename"], candidate / entry["filename"]) for entry in manifest["files"]]
+    bundle = create_bundle(candidate)
+    frozen_bundle = fingerprint(bundle)
+    paths.append((BUNDLE_FILENAME, bundle))
     paths += [("manifest.json", candidate / "manifest.json"), ("validation.json", Path(report))]
     expected_keys = {prefix + name for name, _ in paths}
     unexpected = store.keys(prefix) - expected_keys
@@ -172,6 +232,8 @@ def _transfer_and_verify(candidate, report, store, base_url, *, object_prefix, a
     verify_candidate(candidate)
     if (candidate / "manifest.json").read_bytes() != frozen_manifest or fingerprint(report) != frozen_report:
         raise ValueError("candidate manifest or validation report changed during publication")
+    if fingerprint(bundle) != frozen_bundle:
+        raise ValueError("bundle changed during publication")
     if before_activation is not None:
         before_activation()
     with tempfile.TemporaryDirectory(prefix="latest-") as directory:
@@ -261,6 +323,14 @@ def commit_publication(receipt_path):
     if fingerprint(sidecar)[1] != receipt["staging_inventory_sha256"]:
         raise ValueError("staging inventory differs from receipt")
     paths = [repository / ".gitattributes", *sorted(candidate.iterdir()), report, sidecar, receipt_path]
+    if "bundle_filename" in receipt:
+        if receipt["bundle_filename"] != BUNDLE_FILENAME:
+            raise ValueError("unsupported receipt bundle filename")
+        bundle = workspace / "bundles" / component / BUNDLE_FILENAME
+        if bundle.is_symlink():
+            raise ValueError("bundle must be a regular file")
+        verify_bundle(bundle, manifest)
+        paths.append(bundle)
     relative = [path.relative_to(repository).as_posix() for path in paths]
     # A repeat after a completed commit is a no-op, including when HEAD has moved.
     if not git_command(repository, "status", "--porcelain=v1", "--", *relative):
@@ -283,6 +353,10 @@ def record_publication(candidate, report, base_url, object_prefix, *, already_se
              "source_provenance_sha256": fingerprint(candidate / "source_provenance.json")[1],
              "report_filename": report.name, "report_sha256": fingerprint(report)[1],
              "staging_inventory_sha256": fingerprint(workspace / "staging" / candidate.name / "inventory.json")[1]}
+    bundle = workspace / "bundles" / candidate.name / BUNDLE_FILENAME
+    if bundle.exists():
+        verify_bundle(bundle, manifest)
+        value["bundle_filename"] = BUNDLE_FILENAME
     directory = workspace / "publications"
     directory.mkdir(exist_ok=True)
     receipt = None

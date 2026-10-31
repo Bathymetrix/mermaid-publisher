@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.5.0 — unreleased
+
+- Publish `MERMAID.geocsv.tar.gz` with every new snapshot, containing exactly
+  its manifested instrument files.
+- Retain the bundle outside the frozen candidate and include it in scoped
+  publication recording and receipt recovery.
+- Keep instrument manifests, hashes and scientific report schema 4 unchanged.
+
 ## 0.4.2 — unreleased
 
 - Load publication settings from the JSON file selected by `MERMAID_PUBLISHER_CONFIG`.
