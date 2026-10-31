@@ -1,101 +1,59 @@
 # mermaid-publisher
 
-Create, validate, gate and publish immutable MERMAID data snapshots.
+Create, validate and publish immutable MERMAID GeoCSV snapshots using the
+public `mermaid-geocsv` APIs and ObsPy. Automaid owns scientific source
+generation; `bathymetrix-site` owns read-only hosting.
 
-This repository contains maintainer tools. GeoCSV is the only implemented
-workflow, under `scripts/geocsv/`. Future data types can use sibling directories.
-Scientific GeoCSV APIs remain in `mermaid-geocsv`; Bathymetrix hosting remains in
-`bathymetrix-site`. Repository version: **0.4.2**, independently maintained in
-`version`. No formal software or production data release has been published.
+## Installation
 
-## Local installation
-
-Use the existing environment and install the adjacent migrated consumer with
-its declared scientific/transport dependencies. Before consumer 0.27.0 is
-released, use the local checkout in the same pip invocation:
+Use this repository's existing `.venv`. Install the adjacent consumer and the
+scientific/transport requirements together:
 
 ```bash
-.venv/bin/python -m pip install --force-reinstall ../mermaid-geocsv -r requirements/geocsv.txt
+.venv/bin/python -m pip install ../mermaid-geocsv -r requirements/geocsv.txt
 .venv/bin/python -m pip check
 ```
 
-Publisher 0.4.2 requires mermaid-geocsv >= 0.27.0 and supports only payload
-schema 1.0.0. Creation and candidate inspection require its exact first-line
-declaration and six-digit UTC `#created`; full parsing and scientific validation
-use the consumer. Historical consumer pins and fixture
-bytes remain evidence, without an active legacy reader/exporter path. Installed
-versions and loaded source hashes are bound into every fresh report.
+Python >= 3.11 and mermaid-geocsv >= 0.27.0 are required. Only MERMAID payload
+schema 1.0.0 is supported. Repository version authority is `version`;
+validation reports use schema 4. Reports bind the exact installed software
+and code hashes, not just version numbers.
 
-## GeoCSV workflow
+## Workflow
 
-| File | Responsibility |
+The three commands run as `.venv/bin/python scripts/geocsv/<file>`:
+
+| Command | Responsibility |
 | --- | --- |
-| `create_snapshot.py` | Stage verbatim GeoCSV and freeze inventory, manifest and source provenance |
-| `inspect_snapshot.py` | Internal snapshot integrity and source/workspace checks |
-| `validate_snapshot.py` | Scientific comparisons and complete archive report |
-| `_verify_sac.py` | Internal final-waveform, projection and scratch-export verification |
-| `gate_snapshot.py` | Internal current-evidence publication gate |
-| `publish_snapshot.py` | Transfer, exact-byte checks, latest activation and local archive recording |
+| `create_snapshot.py` | Copy verbatim GeoCSV and freeze instrument scope, manifest and source provenance |
+| `validate_snapshot.py` | Examine every original MiniSEED/SAC pair in that scope |
+| `publish_snapshot.py` | Gate evidence, transfer, verify public bytes, activate latest last and record the publication |
 
-The three commands run directly with `.venv/bin/python scripts/geocsv/<file>`.
-Use [the workflow guide](docs/geocsv/workflow.md) for complete commands.
+`inspect_snapshot.py`, `gate_snapshot.py` and `_verify_sac.py` are internal
+integrity, acceptance and export-verification modules.
 
-Publication settings can be loaded from a private JSON file selected by
-`MERMAID_PUBLISHER_CONFIG`; explicit CLI destination options take precedence.
-The file selects an SDK profile and destination settings; credentials remain
-with the SDK provider. See [configuration](docs/geocsv/workflow.md#publication-configuration).
+Create and validate accept ordinary temporary workspaces without Git or
+publication intent. Actual publication requires the dedicated Git archive
+`$MERMAID/publisher`, with artifacts under
+`geocsv/testing/{snapshots,staging,validation,publications}`. Sources remain
+read-only; original waveform archives are not copied. Selection is frozen at
+creation; validation and transfer cover that exact inventory.
 
-Creation freezes all instruments by default; `--instruments P0006 P0045`
-freezes only those IDs. Validation covers every original pair for the frozen
-instruments, and publishing transfers that exact snapshot without selection.
-Create and validate can use an ordinary temporary workspace without Git or any
-publication intent. Only publishing requires the dedicated persistent archive.
-
-The canonical external archive is `$MERMAID/publisher`, a separate local Git
-repository. Testing GeoCSV artifacts reside under
-`geocsv/testing/{snapshots,staging,validation,publications}`.
-New release components replace only creation-timestamp colons with hyphens;
-GeoCSV bytes and literal release IDs remain unchanged. The authorized
-replacement testing set requires updated fetch/hosting code. Its old URLs may
-be retired; see the [compatibility review](docs/geocsv/release-path-review.md).
-Original MiniSEED/SAC archives remain at their source; only their evidence is archived.
-
-All hosted data are **testing only**. Current commands require explicit HTTPS
-collection URLs ending in `/testing/` and storage prefixes ending in `/testing`.
-Production promotion, remote uploads and deployment require explicit authorization.
-The initial P0006/P0045 testing snapshot was published on 2026-10-26. Live
-conditional-write rejection, exact-byte downloads, caching, fetch modes and all
-3,292 scientific waveform-pair comparisons passed. See the
-[publication findings](docs/geocsv/schema3-findings.md#initial-hosted-testing-publication--2026-10-26).
-The authorized 2026-10-28 replacement now serves the same data and manifest
-under hyphenated paths. Its fresh scientific report passed all 3,292 pairs;
-latest/pinned and disk/memory fetch passed, and the four old testing objects
-were retired. [Replacement evidence](docs/geocsv/release-path-review.md) records
-the deployed Worker, receipt and local archive commit. Further uploads and
-production promotion still require explicit authorization.
-No credentials or private deployment configuration belong in either Git repository.
-
-The schema 1.0.0 P0006/P0045 testing snapshot was published on 2026-10-30
-with publisher 0.4.2 and consumer 0.27.0 after all 3,292 original waveform pairs
-passed fresh validation. Testing latest selects `2026-10-30T18:08:32.316000Z`.
-See [publication and download verification](docs/geocsv/schema1-testing-publication.md).
+All hosted data are **testing only**. The approved hosted scope is P0006/P0045;
+full-corpus licensing remains unresolved. Scientific acceptance does not
+authorize uploads, deployment, retirement or production activation. Publication
+requires an isolated HTTPS testing destination, licensing/citation approval and
+explicit upload authorization. Private settings and credentials remain outside
+checkouts; the SDK resolves credentials.
 
 ## Documentation
 
-- [Create, validate, gate, publish and recover](docs/geocsv/workflow.md)
+- [Create, validate, publish and recover](docs/geocsv/workflow.md)
 - [Publication/download contract](docs/geocsv/contract.md)
-- [Hyphenated path review and testing replacement](docs/geocsv/release-path-review.md)
-- [Scientific checks and report schema 4](docs/geocsv/validation.md)
-- [Historical version-2 archive findings](docs/geocsv/archive-findings.md)
-- [Fresh schema-3 full-corpus and testing-batch findings](docs/geocsv/schema3-findings.md)
-
-## SAC header compatibility
-
-Current consumers use `associate(..., create_sac_header=True)` and ObsPy writing.
-The publisher retains the former exporter checks in `_verify_sac.py` and keeps
-historical 0.24.0 evidence unchanged. The active path requires consumer >= 0.27.0
-with fresh SAC header creation; no legacy exporter branch remains. See the
-[complete verification migration inventory](docs/geocsv/sac-verification.md).
+- [Scientific comparisons and report schema](docs/geocsv/validation.md)
+- [Final waveform and SAC export checks](docs/geocsv/sac-verification.md)
+- [Artifact-bound evidence](docs/geocsv/evidence.md)
+- [Hosting runbook](../bathymetrix-site/docs/geocsv-hosting.md)
 
 ## Verification
 
@@ -103,12 +61,7 @@ with fresh SAC header creation; no legacy exporter branch remains. See the
 .venv/bin/python -B -m unittest discover -s tests -v
 ```
 
-Tests use synthetic temporary inputs, mocked remote storage and disposable
-fixture Git repositories. They do not publish real data or modify the real
-publication archive. Scientific validation uses only public consumer APIs,
-`associate(..., create_sac_header=True)`, ObsPy writing and publisher-owned
-export comparisons. Schema-4 reports use `recording_records`; comparison limits
-are unchanged. The historical 0.24.0 evidence and schema-3 reports remain intact.
-
-Local schema migration and candidate acceptance do not establish a software
-release, compatible hosted payloads, deployment or publication authorization.
+Tests use synthetic temporary inputs, mocked storage and disposable fixture
+Git repositories. They do not publish real data or modify the publication
+archive. Changed candidate/source bytes or validation software require fresh
+acceptance; existing manifests, reports and receipts remain immutable.

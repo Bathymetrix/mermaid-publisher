@@ -167,7 +167,7 @@ operational location, outside the software checkouts. Initial testing artifacts
 remain retireable only through separately authorized cleanup. This publication
 does not authorize production promotion, further uploads or DNS changes;
 DNSSEC restoration was separately completed and verified later on 2026-10-26;
-see the [restoration findings](infrastructure-plan.md#dnssec-restoration--2026-10-26).
+see the [restoration findings](infrastructure-verification.md#dnssec-restoration--2026-10-26).
 
 ## Local consumer-baseline revalidation — 2026-10-26
 

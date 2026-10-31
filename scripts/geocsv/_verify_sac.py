@@ -1,4 +1,4 @@
-"""Internal SAC export checks retained from mermaid-geocsv 0.24.0.
+"""Internal final-waveform and SAC export checks.
 
 The consumer owns association and geographic projection. This module verifies
 that projection and the final waveform, then uses ObsPy for scratch exports.

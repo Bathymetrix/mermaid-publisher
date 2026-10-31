@@ -9,30 +9,19 @@ implemented data type. Keep its code, tests and documentation under their
 `geocsv/` directories. Add shared infrastructure only after another implemented
 workflow demonstrates the need.
 
-Use public `mermaid-geocsv` APIs. Current consumers create SAC station location
-headers through `associate(..., create_sac_header=True)`; ObsPy owns writing.
-Retain final-waveform/export checks in internal `_verify_sac.py` and keep the
-fixed 0.24.0 consumer evidence as history. The replacement schema
-supports only the migrated consumer, with no active legacy writer/reader path.
-Active historical-consumer and encoded-path compatibility paths are removed.
-Publisher 0.4.0 requires consumer >= 0.27.0 and emits report schema 4. Scientific API behavior and package defects
-belong in that package. Publication-specific comparisons and the versioned
-archive report belong here. Consult current package scientific contracts and
-tests before changing comparisons; do not widen tolerances to pass a corpus.
+Use public consumer APIs with mermaid-geocsv >= 0.27.0 and payload schema
+1.0.0. Association creates optional SAC station headers; ObsPy writes them.
+The publisher owns final-waveform/export checks in `_verify_sac.py` and
+validation report schema 4. Scientific behavior and package defects belong in
+the consumer. Do not duplicate matching/projection logic or widen tolerances.
 
-`docs/geocsv/contract.md` is the canonical publication/download agreement. A
-publisher change does not implicitly change fetch behavior. Retain fixed
-historical download fixtures and the exact 0.24.0 baseline as immutable evidence,
-not an active compatibility obligation for the new-only schema. Follow
-`../mermaid-geocsv/docs/format-spec.md` and
-`../automaid/docs/geocsv-migration-plan.md` for the coordinated migration.
-Hyphenated-path publication/download historically requires consumer >= 0.26.0;
-new-schema support requires the separately verified migrated consumer. The path
-review in `docs/geocsv/release-path-review.md` authorizes replacement of the
-initial hosted test set, including retirement of its old URLs. Updating the
-frozen baseline or fixtures still requires an explicit compatibility review. Repository version authority
-is `version`; report schema versions are independent. No release tags or remote
-publication are implied by a version change.
+`docs/geocsv/contract.md` is the canonical publication/download agreement.
+Payload semantics are in `../mermaid-geocsv/docs/format-spec.md`; producer
+rules are in `../automaid/docs/geocsv.md`. Keep frozen manifests, reports,
+receipts, baseline fingerprints and original fixture bytes unchanged. They
+are artifact-bound evidence, not active requirements to support older schemas
+or consumers. Repository version authority is `version`; schema versions are
+independent and imply no tag, release or publication authorization.
 
 Keep relevant documentation in `../mermaid-geocsv` and `../bathymetrix-site`
 in lockstep with this repository and each other. Review and update affected

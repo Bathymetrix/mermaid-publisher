@@ -1,5 +1,4 @@
-# Schema 1.0.0 requires the migrated consumer. Before release, install the
-# adjacent local checkout in the same pip invocation (see README).
+# Scientific validation and publication transport dependencies.
 mermaid-geocsv[obspy]>=0.27.0
 numpy==2.5.3
 pandas==3.0.6

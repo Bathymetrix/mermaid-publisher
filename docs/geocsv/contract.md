@@ -1,97 +1,47 @@
 # GeoCSV publication and download agreement
 
-This document is the canonical GeoCSV publication/download agreement.
-Payload semantics for the local replacement are defined by
-[MERMAID GeoCSV schema 1.0.0](../../../mermaid-geocsv/docs/format-spec.md), with
-implementation sequenced in the [four-repository plan](../../../automaid/docs/geocsv-migration-plan.md).
-That target supports only the new schema and migrated consumer: no active legacy
-reader/writer paths, aliases or fallback. The specification includes the exact
-header, field requirements, missingness and literal Recording Elevation `0`
-with unit `meters`. Automaid v4.6.0 and consumer 0.27.0 implement these payload changes locally;
-testing latest now selects the compatible P0006/P0045 snapshot published on
-2026-10-30; prior old-format snapshots remain historical bytes.
-Manifest fields, literal release identity and the hyphenated-path protocol
-remain unchanged. Older consumer paths described below are current or
-historical implementation evidence, not requirements for the replacement.
+This is the canonical snapshot, manifest and download contract. The consumer's
+[MERMAID schema 1.0.0](../../../mermaid-geocsv/docs/format-spec.md) defines
+payload semantics. Automaid writes scientific products; `mermaid-geocsv` owns
+fetch/read/associate and optional SAC station headers; this publisher owns
+snapshot creation, validation, gating, transfer and recording; the site owns
+read-only hosting. See [workflow](workflow.md) and [SAC verification](sac-verification.md).
 
-The fixed historical scientific/download consumer baseline is mermaid-geocsv 0.24.0 at commit
-`33ed5ff477b6c44447d472fc8e828b5ae930e0db`. Owning this document does not permit
-silent producer/consumer changes: retain historical fixtures and review
-protocol changes explicitly across repositories. The authorized
-[2026-10-28 path review](release-path-review.md) requires consumer >= 0.26.0
-for the replacement timestamped testing collection. The frozen baseline is
-retained as historical evidence, without an active legacy-consumer requirement.
+## Payload and software requirements
 
-The [2026-10-26 compatibility review](consumer-baseline-review.md) adopts this
-revision after an identical reader-module rename and import updates. The
-original baseline fingerprints and historical download fixtures remain retained.
-Existing archived reports describe their original software; future publication
-requires fresh evidence matching the active installed consumer.
+Require Python >= 3.11 and consumer >= 0.27.0. Creation and inspection require
+the exact first-line schema declaration and literal six-digit UTC `#created`,
+including recordless sources. Repeated schema declarations and comments after
+the column header raise; quoted multiline continuations remain CSV data.
+Full parsing and scientific association belong to the consumer. Validation
+selects `Derivation:Recording:` rows and uses `Time`; it projects explicit
+Recording Elevation and never supplies missing source defaults.
 
-Current producer source is automaid v4.6.2. The initial schema implementation
-was v4.6.0; subsequent v4.6.1 correction-field rounding and v4.6.2 per-record
-read-back checks are documented in [the clock matrix](../../../automaid/docs/clock-timing-matrix.md).
-The canonical corpus was regenerated on 2026-10-30. Earlier acceptance reports
-do not accept these new bytes; fresh local evidence is required. The
-P0006/P0045 schema 1.0.0 testing snapshot was separately authorized and
-published on 2026-10-30. Production remains inactive.
+Package version, payload schema, report schema and literal snapshot identity
+are independent. Reports use schema 4 and `recording_records`; they bind exact
+inputs, validation code and dependencies. A report for another inventory or
+software revision cannot accept this candidate.
 
-Fresh regenerated-corpus evidence is recorded in [the 2026-10-30 validation findings](regenerated-corpus-validation.md):
-43,365/43,365 pairs passed report schema 4 and its acceptance gate. This local
-testing-only result does not authorize publication or accept different bytes.
+## Testing-only boundary
 
-## Ownership
+Require `testing_only: true` in both manifest and latest, collection URLs ending
+in `/testing/` and object prefixes ending in `/testing`. Production activation
+is rejected by publisher commands. Testing and production pointers remain
+separate. The approved hosted scope is P0006/P0045; broader distribution needs
+licensing and scope decisions. See [hosting status](../../../bathymetrix-site/docs/geocsv-hosting.md)
+and the [artifact evidence index](evidence.md).
 
-`mermaid-publisher` owns creation, archive validation, its report schema,
-publication gate, transfer and local recording. `mermaid-geocsv` owns public
-fetch/read/associate APIs and optional SAC station location projection.
-The publisher owns export verification and uses ObsPy for current-consumer
-writing; the frozen 0.24.0 exporter remains historical evidence only. Automaid owns scientific source generation. `bathymetrix-site` owns its read-only download
-service, landing page and hosting runbook. Hosting can change independently.
+Scientific acceptance, infrastructure availability and testing publication do
+not authorize further uploads, retirement, production promotion or a formal
+release. Explicit upload authorization and licensing/citation approval are
+required. Cite the MH network DOI `10.7914/SN/MH`; the software license does not
+establish a data license.
 
-Repository version, validation-report schema and download compatibility are
-separate concerns. Report schema 4 names `recording_records` in instrument summaries; all
-scientific limits remain unchanged. Historical schema-3 reports retain their meaning. Publisher 0.3.0 and consumer 0.26.0 implement the explicitly reviewed
-hyphenated path protocol; manifest fields and scientific release IDs are unchanged.
-
-Consumer 0.25.0 removes its public writer and adds `create_sac_header`. This
-scientific API migration does not change the fixed fetch baseline, historical
-fixtures, manifests, URLs or byte semantics. The active publisher requires consumer >= 0.27.0, with no historical exporter path; [SAC verification](sac-verification.md) records every retained
-check. Evidence remains bound to the exact installed software.
-
-## Current publication phase: testing only
-
-All hosted data are testing only, including complete-corpus tests. Require
-matching `testing_only: true` in manifest and latest. Current publisher commands
-reject production activation and require explicit collection URLs ending in
-`/testing/` and object prefixes ending in `/testing`. For Bathymetrix, the local
-serving implementation uses `/geocsv/testing/` and keys `geocsv/testing/`.
-Production `/geocsv/latest.json` and `geocsv/latest.json` remain separate.
-The read-only Worker was deployed on 2026-10-23. The explicitly authorized
-P0006/P0045 testing snapshot `2026-10-21T22:48:33.277Z` was published on
-2026-10-26. On 2026-10-28 the same unchanged data/manifest were republished
-under hyphenated paths and selected by testing latest, with fresh scientific
-evidence. The four old testing objects and encoded URLs were retired. See the
-[path review and replacement evidence](release-path-review.md). Production
-remains inactive. On 2026-10-30, testing latest selected the new schema 1.0.0
-P0006/P0045 snapshot `2026-10-30T18:08:32.316000Z` after fresh acceptance of
-all 3,292 original waveform pairs. Prior snapshots remain unchanged; see
-[publication evidence](schema1-testing-publication.md).
-The public landing page identifies that scope, provides the MH network DOI
-(10.7914/SN/MH), and states that initial workflow tests may be retired after
-verification. Infrastructure deployment, landing-page publication and test
-acceptance do not authorize further uploads, production publication or a first
-release tag. Required licensing/citation decisions and explicit authorization
-remain prerequisites for any further publication.
-
-Initial workflow-testing snapshots are disposable qualification artifacts, not
-permanent scientific releases. After workflow verification, an explicitly
-authorized cleanup may retire their hosted objects and local archive evidence.
-Indefinite availability is not promised for these initial testing URLs. Payloads
-and manifests remain immutable until retirement; a retired testing identity must
-never be reused for different bytes. Retirement intentionally ends pinned-link
-availability, with cache cleanup considered separately. Production artifacts
-retain their indefinite-retention policy. No cleanup is authorized by this rule.
+Initial testing snapshots can be retired only through separately authorized
+cleanup. Keep their bytes immutable until retirement and never reuse an
+identity for different bytes. Pinned testing URLs do not promise indefinite
+availability. Production artifacts have indefinite retention. Cleanup of
+objects, caches, local artifacts or Git history is not implicit.
 
 ## Relative collection paths
 
@@ -111,7 +61,7 @@ separate base URLs, object namespaces and activation pointers. Their relative
 manifest paths retain the same format. Exact delivered bytes and conditional
 immutable writes/latest activation are destination requirements.
 
-## Literal release identity and hyphenated paths
+## Literal release identity and paths
 
 Scientific `release_id` is the exact GeoCSV `#created` value, with grammar
 `YYYY-MM-DDTHH:MM:SS[.digits]Z`, a valid calendar date, hours 00–23 and seconds
@@ -126,18 +76,17 @@ JSON release IDs, provenance or any other dates/times:
 
 | Context | Example |
 | --- | --- |
-| JSON and fetch argument | `2026-10-21T22:48:33.277Z` |
-| URL, R2 key and new local snapshot/staging/validation/download directory | `2026-10-21T22-48-33.277Z` |
+| JSON and fetch argument | `2026-10-30T18:08:32.316000Z` |
+| URL, R2 key and new local snapshot/staging/validation/download directory | `2026-10-30T18-08-32.316000Z` |
 
 Worker lookup uses the plain path component directly as its storage-key
 component. Literal colons and percent-encoded components are rejected before
 cache lookup. No URL decoding or legacy aliases are required. Equivalent
 instants with different fractional spellings remain distinct release IDs.
 Token IDs remain supported unchanged for illustrative client/Worker tests only.
-Historical local encoded directories remain immutable evidence, but active
-candidate verification and receipt recovery reject them. New snapshots use
-hyphens; creation rejects an existing encoded directory for the same identity.
-Existing local downloads are not moved.
+Candidate directories use the hyphenated release component. Encoded-directory
+aliases are unsupported; creation rejects an encoded directory for the same
+identity. No operation automatically renames retained artifacts.
 
 ## Exact manifest protocol
 
@@ -145,9 +94,9 @@ Testing-only latest-pointer format (relative to its isolated collection):
 
 ```json
 {
-  "release_id": "2026-10-21T22:48:33.277Z",
+  "release_id": "2026-10-30T18:08:32.316000Z",
   "testing_only": true,
-  "manifest": "releases/2026-10-21T22-48-33.277Z/manifest.json"
+  "manifest": "releases/2026-10-30T18-08-32.316000Z/manifest.json"
 }
 ```
 
@@ -186,11 +135,11 @@ Validator and publisher recheck those exclusions and reject any original
 waveforms in an in-scope recordless directory. Instruments outside an explicit
 selection are not validation inputs and are not copied or fingerprinted.
 The sidecar is not an R2 release object. The report binds its hash separately.
-Staging schema 1 retains complete-source accounting for default creation.
-Staging schema 2 adds a sorted, nonempty, unique `instrument_ids` array for
+Staging schema 1 records complete-source accounting for default creation.
+Staging schema 2 records a sorted, nonempty, unique `instrument_ids` array for
 explicit selections; its instrument entries must cover exactly that selection,
-including recordless exclusions. Both versions remain supported. The public
-manifest/download format and manifest/download format is unchanged; validation-report schema 4 records the migration.
+including recordless exclusions. Both versions remain supported. Validation
+reports use schema 4.
 
 The creator emits entries sorted by ID. Source provenance uses a
 processed-root-relative `source_path` (`<serial>/geo_DET_REQ.csv`) and
@@ -245,11 +194,7 @@ and complete coverage rather than trusting a success flag. See
 [the concrete report protocol](validation.md). Scientific
 acceptance requires a passing complete run over each candidate's frozen
 instrument scope. A full-corpus report cannot accept a different selected
-candidate. The historical
-2026-10-22 version-2 run passed all 43,365 original waveform pairs and its report
-passed the publisher's acceptance gate; see
-[archive findings](archive-findings.md).
-
+candidate.
 An accepted report may be stored as `validation.json` outside the manifest's
 GeoCSV files list. It binds the manifest; the manifest never depends on its hash.
 Public report provenance is source-relative. Data license and citation remain
@@ -262,8 +207,7 @@ successful publication includes its scoped local archive commit.
 For `testing_only: true`, the base workspace contains a `testing/` collection
 with `snapshots/`, `staging/`, `validation/` and `publications/` subdirectories.
 The creator selects this namespace from the manifest flag; callers continue to
-supply the base workspace. Testing snapshots in the former flat layout must be
-explicitly relocated with their evidence. Candidate inspection rejects testing
+supply the base workspace. Candidate inspection rejects testing
 manifests outside `testing/snapshots/`. Publication recording and network-free
 receipt recovery use the same collection. No remote paths or schemas change.
 
@@ -280,25 +224,3 @@ scoped archive Git commit. Receipts and inventories are not public release
 objects. Publication success and local recording failure are separate outcomes;
 `--record-only` finishes recording without network writes. No automatic pushes
 are performed. See [the workflow](workflow.md).
-
-## Locally implemented schema 1.0.0 migration
-
-Publisher 0.4.1 requires the exact first-line schema 1.0.0 declaration and a
-literal `#created: ` prefix with a six-digit UTC timestamp during creation and
-candidate inspection, including recordless exclusions. Duplicate schema
-declarations and comments after the column header raise; quoted continuation
-lines remain CSV data. Full payload parsing remains consumer-owned and is
-required during scientific validation. The transport release-ID grammar above
-is unchanged; it does not relax new payload requirements or add legacy support.
-
-Publisher 0.4.0 selects `Derivation:Recording:` rows and reads `Time`. Scientific
-validation requires consumer >= 0.27.0. Final-waveform checks verify the source's
-explicit Recording Elevation, including SAC `stel`; no elevation default is used.
-Finite signed Pressure-Absolute sensor readings are preserved by the consumer;
-Recording/crossing pressures and all station-depth projections remain nonnegative.
-Historical consumers, encoded candidate paths and receipt recovery aliases are
-unsupported. Frozen historical reports and downloads remain source evidence.
-
-Local candidate creation/validation uses `testing_only: true` and truthful ordinary
-source-directory provenance. New bytes have new shared six-digit creation/release
-identities. No upload, pointer change, archive commit, deployment or release follows.

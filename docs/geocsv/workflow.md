@@ -1,12 +1,3 @@
-# Current local schema workflow
-
-Publisher 0.4.0 requires the migrated consumer >= 0.27.0. Install the adjacent
-local checkout as described in the README. Use create and validate for isolated
-`testing_only: true` candidates. Report schema 4 uses `recording_records` and
-retains all scientific limits. Existing hosted bytes remain old-format; use a
-local test server for new-format fetch/read verification. No publication is
-authorized by local acceptance. Historical deployment observations below retain their original software and data provenance.
-
 # GeoCSV publication workflow
 
 The publisher owns snapshot creation, full-archive validation, report schema and
@@ -39,8 +30,8 @@ flowchart TB
 
 Current consumers supply fresh SAC station location headers at association;
 ObsPy supplies writing and the publisher verifies final-waveform consistency,
-storage and round trips. Historical consumer/exporter compatibility is removed. See the
-[SAC verification inventory](sac-verification.md).
+storage and round trips. See the
+[SAC verification reference](sac-verification.md).
 
 ## Sources and archive
 
@@ -96,15 +87,6 @@ publication receipts and the publication lock share the testing collection.
 Production manifests remain unsupported. Retirement is an operator procedure;
 there is no deletion command in the publisher.
 
-The earlier testing-namespace migration required an explicit move of each testing
-snapshot and its staging/validation evidence into `testing/`. Frozen files must
-remain byte-identical; old paths are rejected. Layout changes do not alter public
-URLs, object keys, manifest/report schemas or scientific limits for that migration.
-The separate 2026-10-28 hyphenated-path change does update URLs and object keys;
-see [its review](release-path-review.md). Reports bind
-publisher code, so retain old reports and produce fresh evidence after code
-changes. No automatic migration or publication occurs.
-
 Source provenance is local, immutable and bound by report SHA-256. It is not in
 the public manifest's GeoCSV files list and is not uploaded. An identical retry
 must preserve both manifest and source-provenance bytes. Changed provenance
@@ -133,12 +115,12 @@ removed when no longer needed; published artifacts retain their archival policy.
 
 ### Publication candidate
 
-Use this checkout's `.venv`. The initial archive has already been initialized
-locally during migration; for a new installation initialize it explicitly:
+Use this checkout's `.venv` and an existing dedicated publication archive. A new
+archive requires explicit initialization and a `.gitattributes` rule
+`* -text -filter -ident` to preserve exact blob bytes. Do not overwrite an
+existing archive's attributes or configuration.
 
 ```bash
-git init -b main "$MERMAID/publisher"
-printf '* -text -filter -ident\n' > "$MERMAID/publisher/.gitattributes"
 .venv/bin/python scripts/geocsv/create_snapshot.py \
   --source-root "$MERMAID/processed" \
   --workspace "$MERMAID/publisher/geocsv" \
@@ -217,32 +199,14 @@ or authorize uploads, pointer changes or a publication retry with different
 report bytes. Keep the new local evidence distinct from the report used for
 the original publication.
 
-## Hyphenated paths and testing replacement
+## Snapshot paths
 
-Publisher 0.3.0 creates new snapshot/staging directories and R2 keys using
-`release_id.replace(":", "-")`. New validation directories use that same
-component. Manifest `release_id`, GeoCSV `#created`, provenance, arbitrary
-record timestamps and exact payload bytes are unchanged. All fractional digits
-are retained. Existing encoded local archive directories and receipts remain historical
-evidence; active candidate inspection, creation and receipt recovery reject
-encoded paths rather than reading them as aliases.
-The operator does not rename or rewrite historical evidence.
+Use `release_id.replace(":", "-")` for release path components. Preserve the
+literal ID and all fractional digits in payloads, manifests and provenance.
+Candidate inspection and receipt recovery require this directory spelling;
+encoded aliases are unsupported. Do not rename historical evidence.
 
-Publication requires mermaid-geocsv >= 0.27.0 and new schema 1.0.0 payloads.
-Before release, install the adjacent local checkout with the requirements in the
-README. Reports bind the installed consumer's exact code and version. Old
-consumers are rejected before object writes. The historical
-[compatibility review](release-path-review.md) records the path protocol.
-
-The historical 2026-10-28 replacement was authorized for the existing P0006/P0045 testing
-scope. Preserve original data/manifest bytes, create fresh scientific evidence,
-verify the new objects and pinned fetch before selecting latest, and retire
-only the prior testing release objects after replacement verification. Old
-testing URLs can end; no legacy serving aliases are promised. Cached old URLs
-are rejected by the updated Worker before cache lookup. Local historical
-archive evidence is retained. Production is outside this operation.
-
-### Recorded public testing destination
+### Public testing destination
 
 | Setting | Value |
 | --- | --- |
@@ -251,10 +215,8 @@ archive evidence is retained. Production is outside this operation.
 | Worker name | `bathymetrix-geocsv` |
 | Worker route | `bathymetrix.com/geocsv/*` |
 | Bucket binding | `GEOCSV` |
-| SDK profile name | `mermaid-geocsv-testing` |
 
-These public service identifiers and the local profile name are retained here
-for later operations. The account-specific S3 endpoint, private bucket/account
+These are public service identifiers. The account-specific S3 endpoint, private bucket/account
 configuration and credentials stay outside the public checkout. Resolve
 credentials through the SDK provider; never print or copy them.
 
@@ -315,35 +277,14 @@ exits 2 with an unconfirmed-outcome message and requires inspecting remote state
 before retrying. Identical immutable retries
 reuse objects; conflicts never overwrite them.
 
-## Status and verification
+## Verification and current status
 
-Testing latest selects the schema 1.0.0 P0006/P0045 snapshot
-`2026-10-30T18:08:32.316000Z`, published on 2026-10-30 after fresh report-4
-acceptance of 3,292 pairs. Exact public bytes, fetch/read/associate, production
-isolation and scoped archive recording passed; see [publication findings](schema1-testing-publication.md).
+Run the README's unit-test command for scientific comparisons, input/evidence
+tampering, clean source revisions, dedicated archives, transfer ordering,
+testing isolation, configuration precedence and recording recovery.
+Tests use disposable fixtures and mocked publication transport.
 
-Publisher 0.3.0/report schema 3 preserve scientific comparison rules from the
-website's schema-2 workflow. Historical 43,365-pair acceptance is retained as
-historical evidence, not reused. Fresh schema-3 validation of every original pair
-in the frozen instrument scope is required for each candidate. Scientific
-acceptance, deployment and test uploads
-do not authorize production promotion or a first formal release.
-
-Offline tests cover scientific comparisons, changed inputs/evidence, clean Git
-sources, source tracking/revision changes, dedicated Git archives, publication
-sequencing, testing isolation and recording recovery. CI exercises frozen and
-current consumers separately. The initial P0006/P0045 testing snapshot was
-explicitly authorized and published on 2026-10-26. Live R2 conditional-write
-rejection, exact HTTPS bytes, cache hits and controls, latest/pinned fetch,
-one/all instruments, memory/disk, local reuse and download provenance passed.
-A complete read/associate/write_sac rerun using hosted downloads passed all
-3,292 original waveform pairs. The receipt and scoped commit are in the local
-archive. See the [publication findings](schema3-findings.md#initial-hosted-testing-publication--2026-10-26).
-DNSSEC restoration and post-activation DNS, HTTPS/download and email checks
-subsequently passed on 2026-10-26; see the
-[restoration findings](infrastructure-plan.md#dnssec-restoration--2026-10-26).
-The authorized 2026-10-28 path replacement subsequently passed fresh scientific
-acceptance and hosted verification, with the same data/manifest bytes and the
-new consumer. Its previous testing objects/URLs were retired; see the
-[path review](release-path-review.md). Full-corpus licensing, further uploads
-and production activation remain separate outstanding decisions. Canonical source inputs were not modified.
+The website [runbook](../../../bathymetrix-site/docs/geocsv-hosting.md) records
+current deployment status. [Artifact-bound evidence](evidence.md) identifies
+full-corpus validation and the selected hosted snapshot; those scopes have
+separate manifests and reports. Acceptance never transfers to changed bytes.

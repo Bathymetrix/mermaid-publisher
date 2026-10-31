@@ -64,9 +64,8 @@ Limits are recorded in every report and are not configurable from the CLI.
 Failures do not trigger wider tolerances.
 The one-ULP representation-check pattern is established in the package's
 `tests/test_earthscope_response.py` and its association fixture documentation.
-Version 2 introduced that pattern for independent SAC intervals; version 3
-preserves it. It does not change the package's strict association time/rate thresholds.
-Version 1's exact independent-reference interval criterion is not reused.
+The independent SAC comparison permits one float32 ULP. Association retains
+its separate strict time/rate thresholds.
 
 | Check | Rule |
 | --- | --- |
@@ -99,8 +98,7 @@ independent verification and all former exporter guards are retained in
 
 The report also fingerprints `_verify_sac.py`; changing its checks invalidates
 old acceptance evidence without changing schema 4 or scientific tolerances.
-The [migration inventory](sac-verification.md#verification-migration-inventory)
-accounts for every former exporter test.
+See [SAC verification](sac-verification.md) for export preflight checks.
 
 No whole-SAC-header or byte equivalence is asserted. Calibration, instrument,
 orientation and producer-specific trigger headers are outside comparison scope.
@@ -110,12 +108,10 @@ or counts-to-pressure conversion.
 ## Report schema
 
 A UTF-8 JSON object has `schema: "bathymetrix-geocsv-archive-validation"` and integer
-`schema_version: 4`. Unknown versions are rejected. Version 4 retains the
-schema identifier, source-provenance binding, publisher/package fingerprints and
-all scientific limits from version 3. The instrument summary count is now
-`recording_records`, selected using `Derivation:Recording:`. Historical version-2
-and version-3 reports remain unchanged and cannot satisfy the version-4 gate. JSON creation rejects NaN and
-infinity. Reports are created exclusively, retained separately from the frozen
+`schema_version: 4`. Unknown versions are rejected. Reports bind source provenance, publisher/package fingerprints and scientific
+limits. Instrument summaries use `recording_records`, selected with
+`Derivation:Recording:`. Only report schema 4 is accepted. JSON creation rejects
+NaN and infinity. Reports are created exclusively, retained separately from the frozen
 manifest, and use source-relative identifiers without machine-specific roots.
 
 | Field | Meaning |
@@ -197,11 +193,3 @@ report retained in the external publication archive, separate from the software 
 a failed full run does not authorize a production candidate. Package defects
 need source-relative reproductions using public APIs and the exact candidate,
 file fingerprints, versions, affected pair and comparison measurements.
-
-## Payload migration
-
-Publisher 0.4.0 requires consumer >= 0.27.0 and MERMAID payload schema 1.0.0.
-Report revision 4 renames the instrument count to `recording_records`. Stored
-schema-3 reports remain historical and do not accept new candidates. Scientific
-comparison rules and numeric limits are unchanged. Source Recording Elevation
-must explicitly supply zero metres; final SAC `stel` is checked against it.
