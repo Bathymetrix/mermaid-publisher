@@ -1,8 +1,8 @@
-# GeoCSV snapshot validation and report version 4
+# GeoCSV snapshot validation and report version 5
 
 `mermaid-publisher/scripts/geocsv/validate_snapshot.py` orchestrates the public
 `mermaid-geocsv` read → associate(create_sac_header=True) APIs, followed by
-publisher-only export checks and ObsPy writing. Consumer >= 0.27.0 and payload
+publisher-only export checks and ObsPy writing. Consumer >= 0.28.0 and payload
 schema 1.0.0 are required; historical exporter paths are unsupported. Validation requires Python 3.11+,
 `mermaid-geocsv` with its ObsPy extra, and original local MiniSEED/SAC inputs.
 The source tree is read-only. Temporary exports, frozen products and reports
@@ -28,10 +28,9 @@ Original products follow `.MER[digits].DET|REQ.WLT1..5|RAW`. Other waveform
 products, multitrace files, unsupported `.seed`, `.miniseed`, `.ms` and compressed
 waveform formats are reported explicitly. Missing counterparts, unreadable inputs,
 failed associations/exports/comparisons, and unexamined pairs block acceptance.
-No missing waveform is silently replaced or reconstructed. Every available pair
-must be examined; not every GeoCSV metadata row necessarily denotes a separate
-available waveform file. Instruments with no original pairs remain explicit in
-the instrument accounting.
+No missing waveform is silently replaced or reconstructed. Every available pair must be examined. Every Recording row must have at least
+one passing original pair. No coverage waiver exists; multiple originals may
+match one row. An instrument with Recording rows and no originals fails.
 
 `.mhpsd` spectra are outside scope and are neither opened nor counted. Other
 non-waveform products and source-control metadata are not validation inputs.
@@ -52,7 +51,7 @@ run rather than being silently omitted. Default creation retains staging schema
 1 and complete-source accounting. Explicit selections use staging schema 2,
 whose `instrument_ids` must match exactly the instrument entries; unselected
 instruments are outside validation scope. The sidecar hash binds that frozen
-scope without changing report schema 4. Empty GeoCSV files and the staging
+scope without changing report schema 5. Empty GeoCSV files and the staging
 sidecar are never uploaded. The public report records only the sidecar hash and
 recordless-exclusion count, not the excluded payloads.
 
@@ -97,7 +96,7 @@ independent verification and all former exporter guards are retained in
 [`_verify_sac.py`](sac-verification.md).
 
 The report also fingerprints `_verify_sac.py`; changing its checks invalidates
-old acceptance evidence without changing schema 4 or scientific tolerances.
+old acceptance evidence without changing schema 5 or scientific tolerances.
 See [SAC verification](sac-verification.md) for export preflight checks.
 
 No whole-SAC-header or byte equivalence is asserted. Calibration, instrument,
@@ -108,9 +107,9 @@ or counts-to-pressure conversion.
 ## Report schema
 
 A UTF-8 JSON object has `schema: "bathymetrix-geocsv-archive-validation"` and integer
-`schema_version: 4`. Unknown versions are rejected. Reports bind source provenance, publisher/package fingerprints and scientific
-limits. Instrument summaries use `recording_records`, selected with
-`Derivation:Recording:`. Only report schema 4 is accepted. JSON creation rejects
+`schema_version: 5`. Unknown versions are rejected. Reports bind source provenance, publisher/package fingerprints and scientific
+limits. Instrument summaries use `recording_rows`, selected with
+`Derivation:Recording:`. Only report schema 5 is accepted. JSON creation rejects
 NaN and infinity. Reports are created exclusively, retained separately from the frozen
 manifest, and use source-relative identifiers without machine-specific roots.
 
@@ -124,9 +123,9 @@ manifest, and use source-relative identifiers without machine-specific roots.
 | `scope` | Fixed original-waveform scope, excluding spectra without counting |
 | `limits` | Exact versioned scientific rule values and comparison descriptions |
 | `software` | Python, mermaid-geocsv, NumPy, pandas and ObsPy versions; publisher version, workflow code and package Python source hashes |
-| `source_files` | Complete sorted included-input inventory: instrument ID, source-relative path, kind, byte count and SHA-256 |
-| `instruments` | Every included instrument, pair count, parsed `recording_records` count when available, and completion status |
-| `pairs` | Every expected pair, paths, outcome, per-check results, measurements and strict association source-row evidence |
+| `source_files` | Complete sorted included-input inventory: instrument ID, source-relative directory, filename basename, kind, byte count and SHA-256 |
+| `instruments` | Every included instrument, pair count, parsed `recording_rows` count when available, and completion status |
+| `pairs` | Every expected pair, filename basenames, outcome, per-check results, measurements and strict association source-row evidence |
 | `failures` | Instrument, pair ID, stage and diagnostic for every reported failure |
 | `summary` | Recomputable input/pair counts and passed/failed/missing/unsupported/unexamined counts |
 | `maxima` | Recomputable maxima of nonnegative finite per-pair measurements |
@@ -150,7 +149,7 @@ float32 ULP distance, first-sample time differences in ns,
 coordinate errors and their limits in degrees, and depth/elevation errors in
 metres. Undefined depth has a null depth error after a successful both-undefined
 comparison. Association evidence records `single_segment`, dataset index and
-source record index, as supplied by the public package.
+source index, as supplied by the public package.
 
 ## Acceptance
 
@@ -193,3 +192,6 @@ report retained in the external publication archive, separate from the software 
 a failed full run does not authorize a production candidate. Package defects
 need source-relative reproductions using public APIs and the exact candidate,
 file fingerprints, versions, affected pair and comparison measurements.
+
+See [publication reports](publication-reports.md) for the current mandatory
+coverage, clash-report contract, report names, diff policy and explicit overrides.

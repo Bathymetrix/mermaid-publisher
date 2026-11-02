@@ -8,6 +8,7 @@ from pathlib import Path
 import sys
 import tempfile
 
+from _evidence import recording_evidence
 from _verify_sac import write_verified_sac
 
 from gate_snapshot import (
@@ -77,7 +78,7 @@ def compare_pair(trace, reference_path, output_path):
     measurements["elevation_error_m"] = max(abs(actual.stel), abs(reference.stel)) if actual.stel is not None and reference.stel is not None else None
     source = trace.stats.geocsv
     association = {"type": source.association.type, "dataset_index": int(source.dataset_index),
-                   "source_record_index": int(source.source_record_index)}
+                   "source_index": int(source.source_index), "source_line": int(source.source_line)}
     checks = {key: bool(value) for key, value in checks.items()}
     measurements = {key: (None if value is None or not np.isfinite(value) else float(value))
                     for key, value in measurements.items()}
@@ -89,8 +90,8 @@ def validate_snapshot(candidate, source_root, report_path, *, batch_size=128, pr
         raise RuntimeError("full-archive validation requires Python 3.11+")
     from mermaid import geocsv
     from obspy import Stream, read as read_waveforms
-    if tuple(int(part) for part in geocsv.__version__.split('.')) < (0, 27, 0):
-        raise RuntimeError("schema 1.0.0 validation requires mermaid-geocsv >= 0.27.0")
+    if tuple(int(part) for part in geocsv.__version__.split('.')) < (0, 28, 0):
+        raise RuntimeError("schema 1.0.0 validation requires mermaid-geocsv >= 0.28.0")
 
     if type(batch_size) is not int or batch_size < 1:
         raise ValueError("batch_size must be a positive integer")
@@ -130,7 +131,7 @@ def validate_snapshot(candidate, source_root, report_path, *, batch_size=128, pr
     # Only original waveform formats enter this inventory. Spectra are neither read nor counted.
     for source in source_files:
         if source["kind"] == "unsupported":
-            fail(source["instrument_id"], None, "unsupported_format", source["path"])
+            fail(source["instrument_id"], None, "unsupported_format", source["filename"])
         elif source["kind"] == "geocsv":
             entry = next(item for item in manifest["files"] if item["instrument_id"] == source["instrument_id"])
             if (source["size_bytes"], source["sha256"]) != (entry["size_bytes"], entry["sha256"]):
@@ -149,7 +150,7 @@ def validate_snapshot(candidate, source_root, report_path, *, batch_size=128, pr
                 progress(f"{instrument}: {len(selected)} original waveform pairs")
             try:
                 tables = geocsv.read(candidate / entry["filename"])
-                item["recording_records"] = sum(int(table["MethodIdentifier"].str.startswith("Derivation:Recording:", na=False).sum()) for table in tables)
+                item["recording_rows"] = sum(int(table["MethodIdentifier"].str.startswith("Derivation:Recording:", na=False).sum()) for table in tables)
             except Exception as exc:
                 fail(instrument, None, "read_geocsv", exc)
                 item["status"] = "failed"
@@ -158,7 +159,7 @@ def validate_snapshot(candidate, source_root, report_path, *, batch_size=128, pr
                 batch = selected[start:start + batch_size]
                 loaded = []
                 for pair in batch:
-                    if pair["mseed"] is None or pair["sac"] is None:
+                    if pair["mseed_filename"] is None or pair["sac_filename"] is None:
                         pair["status"] = "missing"
                         fail(instrument, pair, "missing_pair", "original MiniSEED and independently read paired SAC are both required")
                         continue
@@ -167,7 +168,7 @@ def validate_snapshot(candidate, source_root, report_path, *, batch_size=128, pr
                         fail(instrument, pair, "unsupported_product", "unsupported original waveform product")
                         continue
                     try:
-                        stream = read_waveforms(str(source_root / pair["mseed"]), format="MSEED")
+                        stream = read_waveforms(str(source_root / Path(pair["pair_id"]).parent / pair["mseed_filename"]), format="MSEED")
                         if len(stream) != 1:
                             pair["status"] = "unsupported"
                             fail(instrument, pair, "waveform_layout", f"expected one original contiguous Trace, got {len(stream)}")
@@ -196,7 +197,7 @@ def validate_snapshot(candidate, source_root, report_path, *, batch_size=128, pr
                 for index, (pair, trace) in enumerate(loaded):
                     output = scratch / f"{index}.sac"
                     try:
-                        checks, measurements, association = compare_pair(trace, source_root / pair["sac"], output)
+                        checks, measurements, association = compare_pair(trace, source_root / Path(pair["pair_id"]).parent / pair["sac_filename"], output)
                         pair.update(checks=checks, measurements=measurements, association=association)
                         pair["status"] = "passed" if all(checks.values()) else "failed"
                         for name, passed in checks.items():
@@ -209,6 +210,15 @@ def validate_snapshot(candidate, source_root, report_path, *, batch_size=128, pr
                         output.unlink(missing_ok=True)
                 if progress and len(selected) > batch_size:
                     progress(f"{instrument}: examined {min(start + batch_size, len(selected))}/{len(selected)}")
+            try:
+                evidence = recording_evidence(candidate, entry, tables, selected)
+                item.update(evidence)
+                source_clash = next((source for source in source_files if source['kind'] == 'clash'
+                                     and source['instrument_id'] == instrument), None)
+                if source_clash is None or source_clash['sha256'] != evidence['clash_report']['sha256']:
+                    raise ValueError('source producer clash report differs from frozen evidence')
+            except (OSError, ValueError) as exc:
+                fail(instrument, None, 'recording_coverage_or_clash_report', exc)
             item["status"] = "complete" if all(pair["status"] == "passed" for pair in selected) and len(report["failures"]) == before_failures else "failed"
 
     # Bind the evidence to files stable throughout the complete run.

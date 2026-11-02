@@ -12,7 +12,7 @@ from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts/geocsv"))
 from gate_snapshot import AcceptanceError, LIMITS, require_acceptance
-from create_snapshot import create_snapshot
+from create_snapshot import create_snapshot as _create_snapshot
 from inspect_snapshot import json_bytes
 from validate_snapshot import validate_snapshot
 from publish_snapshot import require_scientific_acceptance
@@ -24,6 +24,16 @@ try:
     from mermaid import geocsv
 except ImportError:
     geocsv = None
+
+
+def create_snapshot(source_root, *args, **kwargs):
+    """Emit clean producer evidence for these synthetic test generations."""
+    import hashlib
+    for geo in Path(source_root).glob('*/geo_DET_REQ.csv'):
+        geo.with_name('geocsv-clash.json').write_bytes(json_bytes({
+            'schema_version': 1, 'geocsv_sha256': hashlib.sha256(geo.read_bytes()).hexdigest(),
+            'clashes': []}))
+    return _create_snapshot(source_root, *args, **kwargs)
 
 
 @unittest.skipIf(geocsv is None, "requires mermaid-geocsv with the ObsPy extra")
@@ -184,7 +194,7 @@ class ArchiveValidation(unittest.TestCase):
         report = self.validate()
         self.assertEqual(report["summary"]["unsupported_files"], 1)
         self.assertEqual(report["status"], "failed")
-        self.assertFalse(any("mhpsd" in item["path"] for item in report["source_files"]))
+        self.assertFalse(any("mhpsd" in item["filename"] for item in report["source_files"]))
 
     def test_recordless_instrument_is_accounted_locally_and_not_staged(self):
         empty = self.source / "empty"
@@ -286,6 +296,57 @@ class ArchiveValidation(unittest.TestCase):
         self.assertFalse((workspace / ".git").exists())
         self.assertFalse((workspace / "testing/publications").exists())
         self.assertFalse(any(path.suffix in {".mseed", ".sac"} for path in workspace.rglob("*")))
+
+
+    def test_unmatched_recording_without_either_waveform_blocks(self):
+        self.mseed.unlink()
+        self.sac.unlink()
+        report = self.validate()
+        self.assertEqual(report['status'], 'failed')
+        self.assertIn('unmatched Recording', str(report['failures']))
+        with self.assertRaises(AcceptanceError):
+            require_acceptance(self.candidate, self.report_path, self.source)
+
+    def test_one_mseed_with_two_eligible_rows_blocks(self):
+        row = self.geo.read_text().splitlines()[-1]
+        self.geo.write_text(self.geo.read_text() + row.replace('00:00:00.000000Z', '00:00:00.000001Z') + '\n')
+        self.candidate = create_snapshot(self.source, self.root / 'ambiguous', self.inventory)
+        report = self.validate()
+        self.assertEqual(report['status'], 'failed')
+        self.assertIn('ambiguous', str(report['failures']))
+        with self.assertRaises(AcceptanceError):
+            require_acceptance(self.candidate, self.report_path, self.source)
+
+    def test_clash_filenames_verified_without_mer_header_interpretation(self):
+        producer = self.serial / 'geocsv-clash.json'
+        content = json.loads(producer.read_text())
+        content['clashes'] = [{'source_index': 0, 'source_line': len(HEADER.splitlines()) + 1,
+            'mseed_filenames': [self.mseed.name],
+            'header_differences': [{'field': 'opaque producer field'}]}]
+        producer.write_bytes(json_bytes(content))
+        self.candidate = _create_snapshot(self.source, self.root / 'clashes', self.inventory)
+        report = self.validate()
+        self.assertEqual(report['status'], 'passed', report['failures'])
+        self.assertEqual(report['instruments'][0]['clash_report']['content'], content)
+        require_acceptance(self.candidate, self.report_path, self.source)
+        content['clashes'][0]['mseed_filenames'] = ['wrong.mseed']
+        producer.write_bytes(json_bytes(content))
+        with self.assertRaises(AcceptanceError):
+            require_acceptance(self.candidate, self.report_path, self.source)
+
+    def test_missing_clash_report_blocks(self):
+        (self.candidate / 'P0006.clash.json').unlink()
+        report = self.validate()
+        self.assertEqual(report['status'], 'failed')
+
+    def test_many_originals_may_cover_one_row(self):
+        repeated = self.cycle / self.mseed.name.replace('.MER.', '.MER1.')
+        repeated.write_bytes(self.mseed.read_bytes())
+        repeated.with_suffix('.sac').write_bytes(self.sac.read_bytes())
+        report = self.validate()
+        self.assertEqual(report['status'], 'passed', report['failures'])
+        self.assertEqual(len(report['instruments'][0]['coverage'][0]['mseed_filenames']), 2)
+        require_acceptance(self.candidate, self.report_path, self.source)
 
 
 if __name__ == "__main__":

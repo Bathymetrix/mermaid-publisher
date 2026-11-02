@@ -141,6 +141,12 @@ def verify_candidate(directory):
     if directory.name != release_component(manifest["release_id"]):
         raise ValueError("candidate directory must use the hyphenated release component")
     expected = {"manifest.json", "source_provenance.json", *(entry["filename"] for entry in entries)}
+    for entry in entries:
+        clash = directory / f"{entry['instrument_id']}.clash.json"
+        if clash.exists():
+            if clash.is_symlink() or not clash.is_file():
+                raise ValueError('producer clash report must be a regular file')
+            expected.add(clash.name)
     if {path.name for path in directory.iterdir()} != expected:
         raise ValueError("candidate inventory differs from frozen manifest")
     provenance_path = directory / "source_provenance.json"

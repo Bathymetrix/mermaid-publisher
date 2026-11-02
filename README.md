@@ -14,9 +14,9 @@ scientific/transport requirements together:
 .venv/bin/python -m pip check
 ```
 
-Python >= 3.11 and mermaid-geocsv >= 0.27.0 are required. Only MERMAID payload
+Python >= 3.11 and mermaid-geocsv >= 0.28.0 are required. Only MERMAID payload
 schema 1.0.0 is supported. Repository version authority is `version`;
-validation reports use schema 4. Reports bind the exact installed software
+validation reports use schema 5. Reports bind the exact installed software
 and code hashes, not just version numbers.
 
 ## Workflow
@@ -35,7 +35,7 @@ integrity, acceptance and export-verification modules.
 Create and validate accept ordinary temporary workspaces without Git or
 publication intent. Actual publication requires the dedicated Git archive
 `$MERMAID/publisher`, with artifacts under
-`geocsv/testing/{snapshots,staging,validation,bundles,publications}`. Sources remain
+`geocsv/testing/{snapshots,staging,validation,bundles,reports,publications}`. Sources remain
 read-only; original waveform archives are not copied. Selection is frozen at
 creation; validation and transfer cover that exact inventory.
 
@@ -70,3 +70,7 @@ Tests use synthetic temporary inputs, mocked storage and disposable fixture
 Git repositories. They do not publish real data or modify the publication
 archive. Changed candidate/source bytes or validation software require fresh
 acceptance; existing manifests, reports and receipts remain immutable.
+
+See [publication reports](docs/geocsv/publication-reports.md) for mandatory Recording
+coverage, producer clash verification, schema-5 names and published mapping/diff
+reports.

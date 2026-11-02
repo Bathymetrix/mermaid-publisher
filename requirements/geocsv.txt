@@ -1,5 +1,5 @@
 # Scientific validation and publication transport dependencies.
-mermaid-geocsv[obspy]>=0.27.0
+mermaid-geocsv[obspy]>=0.28.0
 numpy==2.5.3
 pandas==3.0.6
 obspy==1.5.1

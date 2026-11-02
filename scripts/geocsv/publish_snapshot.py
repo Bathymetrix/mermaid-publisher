@@ -16,6 +16,7 @@ from urllib.request import Request, urlopen
 
 from inspect_snapshot import fingerprint, git_command, git_repository, json_bytes, read_json, release_component, require_external_workspace, verify_candidate
 from gate_snapshot import AcceptanceError, require_acceptance
+from _reports import publication_reports
 
 
 AcceptanceUnavailable = AcceptanceError  # Retain the private preflight exception name.
@@ -157,11 +158,11 @@ def verify_https(url, expected):
 def require_fetch_consumer():
     """Reject the historical download protocol before any object writes."""
     from mermaid import geocsv
-    if tuple(int(part) for part in geocsv.__version__.split(".")) < (0, 27, 0):
-        raise ValueError("schema 1.0.0 publication requires mermaid-geocsv >= 0.27.0")
+    if tuple(int(part) for part in geocsv.__version__.split(".")) < (0, 28, 0):
+        raise ValueError("schema 1.0.0 publication requires mermaid-geocsv >= 0.28.0")
 
 
-def _transfer_and_verify(candidate, report, store, base_url, *, object_prefix, accepted=None, report_fingerprint=None, before_activation=None):
+def _transfer_and_verify(candidate, report, store, base_url, *, object_prefix, accepted=None, report_fingerprint=None, before_activation=None, allow_metadata_changes=False, allow_schema_change=False):
     """Publication sequence, reachable from the CLI only after scientific acceptance.
 
     Kept separate to test ordering and failures with an in-memory transport;
@@ -184,6 +185,7 @@ def _transfer_and_verify(candidate, report, store, base_url, *, object_prefix, a
     latest_before = store.get(latest_key)
     already_selected = False
     etag = None
+    old_id = None
     if latest_before is not None:
         etag = latest_before["ETag"]
         with latest_before["Body"] as stream:
@@ -194,21 +196,16 @@ def _transfer_and_verify(candidate, report, store, base_url, *, object_prefix, a
                 or old.get("manifest") != f"releases/{old_component}/manifest.json"):
             raise ValueError("current testing pointer is inconsistent")
         already_selected = old_id == release
-        previous_component = old_component
-        previous = store.get(f"{object_prefix}/releases/{previous_component}/manifest.json")
-        if previous is None:
-            raise ValueError("current latest manifest is missing")
-        with previous["Body"] as stream:
-            old_manifest = json.load(stream)
-        missing = {entry["instrument_id"] for entry in old_manifest["files"]} - {
-            entry["instrument_id"] for entry in manifest["files"]}
-        if missing:
-            raise ValueError(f"previously published instruments missing: {sorted(missing)}")
+    generated_reports = publication_reports(candidate, report, store, object_prefix, old_id,
+        already_selected=already_selected, allow_metadata_changes=allow_metadata_changes,
+        allow_schema_change=allow_schema_change)
     paths = [(entry["filename"], candidate / entry["filename"]) for entry in manifest["files"]]
     bundle = create_bundle(candidate)
     frozen_bundle = fingerprint(bundle)
     paths.append((BUNDLE_FILENAME, bundle))
     paths += [("manifest.json", candidate / "manifest.json"), ("validation.json", Path(report))]
+    paths += generated_reports
+    frozen_paths = {name: fingerprint(path) for name, path in paths}
     expected_keys = {prefix + name for name, _ in paths}
     unexpected = store.keys(prefix) - expected_keys
     if unexpected:
@@ -234,6 +231,8 @@ def _transfer_and_verify(candidate, report, store, base_url, *, object_prefix, a
         raise ValueError("candidate manifest or validation report changed during publication")
     if fingerprint(bundle) != frozen_bundle:
         raise ValueError("bundle changed during publication")
+    if any(fingerprint(path) != frozen_paths[name] for name, path in paths):
+        raise ValueError('publication artifacts changed during transfer')
     if before_activation is not None:
         before_activation()
     with tempfile.TemporaryDirectory(prefix="latest-") as directory:
@@ -331,6 +330,11 @@ def commit_publication(receipt_path):
             raise ValueError("bundle must be a regular file")
         verify_bundle(bundle, manifest)
         paths.append(bundle)
+    for name, checksum in receipt.get('publication_reports', {}).items():
+        path = workspace / 'reports' / component / name
+        if path.name != name or path.is_symlink() or fingerprint(path)[1] != checksum:
+            raise ValueError('publication report differs from receipt')
+        paths.append(path)
     relative = [path.relative_to(repository).as_posix() for path in paths]
     # A repeat after a completed commit is a no-op, including when HEAD has moved.
     if not git_command(repository, "status", "--porcelain=v1", "--", *relative):
@@ -357,6 +361,9 @@ def record_publication(candidate, report, base_url, object_prefix, *, already_se
     if bundle.exists():
         verify_bundle(bundle, manifest)
         value["bundle_filename"] = BUNDLE_FILENAME
+    reports = workspace / 'reports' / candidate.name
+    if reports.exists():
+        value['publication_reports'] = {path.name: fingerprint(path)[1] for path in sorted(reports.iterdir())}
     directory = workspace / "publications"
     directory.mkdir(exist_ok=True)
     receipt = None
@@ -403,6 +410,10 @@ def main():
     parser.add_argument("--candidate", type=Path)
     parser.add_argument("--report", type=Path)
     parser.add_argument("--source-root", type=Path, help="read-only processed root")
+    parser.add_argument('--allow-metadata-changes', action='store_true',
+                        help='explicitly allow edits/deletions relative to previous latest')
+    parser.add_argument('--allow-schema-change', action='store_true',
+                        help='explicitly allow a schema mismatch without a simple diff')
     parser.add_argument("--plan", action="store_true", help="read-only local inspection and gate; no uploads or commits")
     parser.add_argument("--record-only", type=Path, metavar="RECEIPT", help="finish local Git recording after successful publication; no network")
     parser.add_argument("--base-url", help="explicit HTTPS testing collection URL")
@@ -412,7 +423,7 @@ def main():
     args = parser.parse_args()
     try:
         if args.record_only:
-            if any((args.candidate, args.report, args.source_root, args.plan, args.base_url, args.object_prefix, args.endpoint_url, args.bucket)):
+            if any((args.candidate, args.report, args.source_root, args.plan, args.base_url, args.object_prefix, args.endpoint_url, args.bucket, args.allow_metadata_changes, args.allow_schema_change)):
                 raise ValueError("--record-only must be used alone")
             try:
                 commit_publication(args.record_only)
@@ -434,13 +445,12 @@ def main():
         if candidate.parent.name != "snapshots":
             raise ValueError("candidate must be under <workspace>/testing/snapshots/")
         if args.plan:
-            if bool(args.report) != bool(args.source_root):
+            if not args.report or not args.source_root:
                 raise ValueError("supply both --report and --source-root for the scientific gate")
-            if args.report:
-                require_scientific_acceptance(candidate, args.report, args.source_root)
+            require_scientific_acceptance(candidate, args.report, args.source_root)
             print(json.dumps({"release_id": manifest["release_id"], "files": len(manifest["files"]),
                               "base_url": base_url, "object_prefix": object_prefix, "testing_only": True,
-                              "publication": "gate passed; no publication performed" if args.report else "BLOCKED: report and source root required"}, indent=2))
+                              "publication": "local evidence gate passed; remote comparison and publication not performed"}, indent=2))
             return
         archive_repository(workspace)
         if not args.report or args.report.resolve().parent != workspace / "validation" / candidate.name:
@@ -454,7 +464,8 @@ def main():
             already_selected = _transfer_and_verify(
                 candidate, args.report, store, base_url, object_prefix=object_prefix,
                 accepted=accepted, report_fingerprint=accepted_fingerprint,
-                before_activation=lambda: require_scientific_acceptance(candidate, args.report, args.source_root))
+                before_activation=lambda: require_scientific_acceptance(candidate, args.report, args.source_root),
+                allow_metadata_changes=args.allow_metadata_changes, allow_schema_change=args.allow_schema_change)
             try:
                 receipt = record_publication(candidate, args.report, base_url, object_prefix, already_selected=already_selected)
             except PublicationRecordingError:

@@ -9,10 +9,10 @@ implemented data type. Keep its code, tests and documentation under their
 `geocsv/` directories. Add shared infrastructure only after another implemented
 workflow demonstrates the need.
 
-Use public consumer APIs with mermaid-geocsv >= 0.27.0 and payload schema
+Use public consumer APIs with mermaid-geocsv >= 0.28.0 and payload schema
 1.0.0. Association creates optional SAC station headers; ObsPy writes them.
 The publisher owns final-waveform/export checks in `_verify_sac.py` and
-validation report schema 4. Scientific behavior and package defects belong in
+validation report schema 5. Scientific behavior and package defects belong in
 the consumer. Do not duplicate matching/projection logic or widen tolerances.
 
 `docs/geocsv/contract.md` is the canonical publication/download agreement.

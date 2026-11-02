@@ -163,7 +163,7 @@ GEOCSV_REPORT="$MERMAID/publisher/geocsv/testing/validation/2026-10-30T18-08-32.
 ```
 
 `--plan` performs no uploads or commits. With report/source arguments it applies
-the scientific gate. Without them it reports publication blocked. Validation
+the scientific gate. Without both arguments it exits nonzero. Validation
 uses bounded batches, strict original-segment association and independent SAC
 references. It does not calibrate, merge, repair or copy waveform archives.
 
@@ -300,3 +300,6 @@ The website [runbook](../../../bathymetrix-site/docs/geocsv-hosting.md) records
 current deployment status. [Artifact-bound evidence](evidence.md) identifies
 full-corpus validation and the selected hosted snapshot; those scopes have
 separate manifests and reports. Acceptance never transfers to changed bytes.
+
+See [publication reports](publication-reports.md) for the current mandatory
+coverage, clash-report contract, report names, diff policy and explicit overrides.

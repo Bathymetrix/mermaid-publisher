@@ -277,7 +277,7 @@ class Publication(unittest.TestCase):
         self.store = MemoryStore()
         manifest_bytes = (self.candidate / "manifest.json").read_bytes()
         result = SimpleNamespace(provenance=SimpleNamespace(instrument_id="P0006", manifest=manifest_bytes))
-        self.client = SimpleNamespace(geocsv=SimpleNamespace(__version__="0.27.0", fetch=lambda **kwargs: [result]))
+        self.client = SimpleNamespace(geocsv=SimpleNamespace(__version__="0.28.0", fetch=lambda **kwargs: [result]))
         self.patches = [patch.object(publisher, "verify_https"),
                         patch.dict(sys.modules, {"mermaid": self.client})]
         self.https = self.patches[0].start()
@@ -296,7 +296,7 @@ class Publication(unittest.TestCase):
 
     def test_old_fetch_consumer_stops_before_remote_writes(self):
         self.client.geocsv.__version__ = "0.24.0"
-        with self.assertRaisesRegex(ValueError, ">= 0.27.0"):
+        with self.assertRaisesRegex(ValueError, ">= 0.28.0"):
             self.transfer()
         self.assertEqual(self.store.writes, [])
 
@@ -317,8 +317,8 @@ class Publication(unittest.TestCase):
         script = Path(publisher.__file__)
         command = [sys.executable, "-B", str(script), "--candidate", str(self.candidate), "--base-url", "https://example.test/geocsv/testing/", "--object-prefix", "geocsv/testing"]
         plan = subprocess.run([*command, "--plan"], capture_output=True, text=True)
-        self.assertEqual(plan.returncode, 0, plan.stderr)
-        self.assertIn("BLOCKED", plan.stdout)
+        self.assertNotEqual(plan.returncode, 0)
+        self.assertIn("supply both", plan.stderr)
         blocked = subprocess.run([*command, "--report", str(self.report)], capture_output=True, text=True)
         self.assertNotEqual(blocked.returncode, 0)
         self.assertIn("dedicated Git archive", blocked.stderr)
@@ -464,10 +464,11 @@ class PublicationConfiguration(unittest.TestCase):
 
     def test_plan_loads_file_and_cli_overrides_without_authentication(self):
         candidate = Snapshots.create(self)
-        command = ["publish_snapshot.py", "--candidate", str(candidate), "--plan"]
+        command = ["publish_snapshot.py", "--candidate", str(candidate), "--plan",
+                   "--report", "synthetic-report.json", "--source-root", str(self.source)]
         for overrides, expected_url in (([], self.settings["base_url"]),
                                        (["--base-url", "https://override.test/testing/"], "https://override.test/testing/")):
-            with patch.object(sys, "argv", command + overrides), patch("sys.stdout", new_callable=io.StringIO) as output, patch.object(publisher, "R2Store") as store:
+            with patch.object(publisher, "require_scientific_acceptance"), patch.object(sys, "argv", command + overrides), patch("sys.stdout", new_callable=io.StringIO) as output, patch.object(publisher, "R2Store") as store:
                 publisher.main()
                 self.assertEqual(json.loads(output.getvalue())["base_url"], expected_url)
                 store.assert_not_called()

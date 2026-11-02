@@ -1,4 +1,4 @@
-"""Version 4 exhaustive snapshot evidence and publication gate for MERMAID GeoCSV."""
+"""Version 5 exhaustive snapshot evidence and publication gate for MERMAID GeoCSV."""
 
 import importlib.metadata
 import math
@@ -10,7 +10,7 @@ import sys
 from inspect_snapshot import check_instrument, check_source_provenance, fingerprint, inspect_source_geocsv, read_json, verify_candidate
 
 SCHEMA = "bathymetrix-geocsv-archive-validation"
-VERSION = 4
+VERSION = 5
 CHECKS = (
     "strict_association", "identity", "sample_count", "samples_native",
     "samples_reference", "sample_interval", "start_native", "start_reference",
@@ -60,7 +60,7 @@ def software_versions():
     versions["publisher_code_sha256"] = {
         name: fingerprint(Path(__file__).parent / name)[1] for name in (
             "inspect_snapshot.py", "create_snapshot.py", "validate_snapshot.py",
-            "gate_snapshot.py", "publish_snapshot.py", "_verify_sac.py")}
+            "gate_snapshot.py", "publish_snapshot.py", "_verify_sac.py", "_evidence.py", "_reports.py")}
     versions["package_code_sha256"] = {
         path.name: fingerprint(path)[1]
         for path in sorted(Path(geocsv.__file__).parent.glob("*.py"))}
@@ -92,6 +92,9 @@ def inventory_sources(manifest, source_root):
     files = []
     for instrument, directory in sorted(directories.items()):
         paths = [(directory / "geo_DET_REQ.csv", "geocsv")]
+        clash = directory / 'geocsv-clash.json'
+        if clash.exists():
+            paths.append((clash, 'clash'))
         for parent, dirs, names in os.walk(directory, followlinks=False):
             # Source metadata and credentials are not validation inputs.
             dirs[:] = [name for name in dirs if name != ".git"]
@@ -110,9 +113,10 @@ def inventory_sources(manifest, source_root):
             if path.is_symlink() or root not in path.resolve(strict=True).parents or not path.is_file():
                 raise AcceptanceError(f"not a regular contained source input: {path.relative_to(root)}")
             size, checksum = fingerprint(path)
-            files.append({"instrument_id": instrument, "path": path.relative_to(root).as_posix(),
+            files.append({"instrument_id": instrument, "directory": path.parent.relative_to(root).as_posix(),
+                          "filename": path.name,
                           "kind": kind, "size_bytes": size, "sha256": checksum})
-    return sorted(files, key=lambda entry: (entry["instrument_id"], entry["path"]))
+    return sorted(files, key=lambda entry: (entry["instrument_id"], entry["directory"], entry["filename"]))
 
 
 def check_staging_inventory(candidate, manifest, source_root):
@@ -178,12 +182,12 @@ def pair_inventory(source_files):
     for entry in source_files:
         if entry["kind"] not in {"mseed", "sac"}:
             continue
-        path = PurePosixPath(entry["path"])
+        path = PurePosixPath(entry["directory"]) / entry["filename"]
         key = (entry["instrument_id"], str(path.with_suffix("")))
-        pair = pairs.setdefault(key, {"instrument_id": key[0], "pair_id": key[1], "mseed": None, "sac": None})
-        if pair[entry["kind"]] is not None:
+        pair = pairs.setdefault(key, {"instrument_id": key[0], "pair_id": key[1], "mseed_filename": None, "sac_filename": None})
+        if pair[entry["kind"] + "_filename"] is not None:
             raise AcceptanceError(f"duplicate format for waveform pair: {key}")
-        pair[entry["kind"]] = entry["path"]
+        pair[entry["kind"] + "_filename"] = path.name
     return [pairs[key] for key in sorted(pairs)]
 
 
@@ -284,7 +288,7 @@ def require_acceptance(candidate, report_path, source_root):
     for expected_pair, pair in zip(expected_pairs, pairs):
         if not isinstance(pair, dict) or any(pair.get(key) != value for key, value in expected_pair.items()):
             raise AcceptanceError("pair inventory differs or has omissions/duplicates")
-        if not pair["mseed"] or not pair["sac"] or not supported_product(pair):
+        if not pair["mseed_filename"] or not pair["sac_filename"] or not supported_product(pair):
             raise AcceptanceError("missing pair or unsupported waveform product")
         checks = pair.get("checks")
         if (pair.get("status") != "passed" or not isinstance(checks, dict)
@@ -305,7 +309,22 @@ def require_acceptance(candidate, report_path, source_root):
     expected_instruments = sorted(geo_by_id)
     if not isinstance(instruments, list) or [item.get("instrument_id") for item in instruments] != expected_instruments:
         raise AcceptanceError("instrument accounting is incomplete")
+    from mermaid import geocsv
+    from _evidence import recording_evidence
     for item in instruments:
+        entry = geo_by_id[item['instrument_id']]
+        selected_pairs = [pair for pair in pairs if pair['instrument_id'] == item['instrument_id']]
+        try:
+            evidence = recording_evidence(candidate, entry,
+                geocsv.read(Path(candidate) / entry['filename']), selected_pairs)
+        except (OSError, ValueError) as exc:
+            raise AcceptanceError(str(exc)) from exc
+        if any(item.get(key) != value for key, value in evidence.items()):
+            raise AcceptanceError('Recording coverage or producer clash evidence differs')
+        source_clash = next((source for source in sources if source['kind'] == 'clash'
+                            and source['instrument_id'] == item['instrument_id']), None)
+        if source_clash is None or source_clash['sha256'] != evidence['clash_report']['sha256']:
+            raise AcceptanceError('source producer clash report differs from frozen evidence')
         count = sum(pair["instrument_id"] == item["instrument_id"] for pair in pairs)
         if item.get("pairs") != count or item.get("status") != "complete":
             raise AcceptanceError("instrument coverage is incomplete")

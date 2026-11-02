@@ -177,7 +177,7 @@ class ProvenanceGate(unittest.TestCase):
     def test_report_binds_provenance_and_rejects_source_tracking_changes(self):
         from gate_snapshot import require_acceptance
         report = self.validate()
-        self.assertEqual(report["schema_version"], 4)
+        self.assertEqual(report["schema_version"], 5)
         self.assertEqual(report["source_provenance_sha256"], fingerprint(self.candidate / "source_provenance.json")[1])
         initialize(self.source)
         git(self.source, "add", ".")
@@ -255,7 +255,7 @@ class PublicationCommand(unittest.TestCase):
         self.assertEqual(self.store.writes, [])
 
     def test_selected_snapshot_is_validated_uploaded_and_archived_as_frozen(self):
-        from create_snapshot import create_snapshot
+        from geocsv.test_scientific_validation import create_snapshot
         self.geo.write_text(self.geo.read_text().replace("2026-10-29T", "2026-10-30T"))
         unselected = self.source / "unselected"
         unselected.mkdir()

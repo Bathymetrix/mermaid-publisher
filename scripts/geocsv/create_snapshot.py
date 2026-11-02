@@ -37,7 +37,7 @@ def read_inventory(path):
     return mapping
 
 
-def create_snapshot(source_root, workspace, inventory_path, previous_manifest=None, *, instruments=None):
+def create_snapshot(source_root, workspace, inventory_path, previous_manifest=None, *, instruments=None, allow_metadata_changes=False):
     source_root = Path(source_root).resolve(strict=True)
     workspace = require_external_workspace(workspace, source_root)
     provenance = source_provenance(source_root)
@@ -60,7 +60,7 @@ def create_snapshot(source_root, workspace, inventory_path, previous_manifest=No
     if previous_manifest:
         previous = check_manifest(read_json(previous_manifest))
         missing_ids = {entry["instrument_id"] for entry in previous} - set(mapping.values())
-        if missing_ids:
+        if missing_ids and not allow_metadata_changes:
             raise ValueError(f"previously published instruments missing: {sorted(missing_ids)}")
     workspace.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(prefix=".candidate-", dir=workspace) as temporary:
@@ -81,6 +81,11 @@ def create_snapshot(source_root, workspace, inventory_path, previous_manifest=No
                                "status": "excluded_recordless", "reason": "no data records",
                                "created": created, "size_bytes": size, "sha256": checksum})
                 continue  # Never copy a recordless payload into a candidate.
+            clash = source.with_name('geocsv-clash.json')
+            if clash.exists():
+                if clash.is_symlink():
+                    raise ValueError('producer clash report cannot be a symlink')
+                shutil.copyfile(clash, candidate / f"{instrument}.clash.json")
             target = candidate / f"{instrument}.geocsv"
             with source.open("rb") as reader, target.open("xb") as writer:
                 shutil.copyfileobj(reader, writer, length=1024 * 1024)
@@ -97,7 +102,7 @@ def create_snapshot(source_root, workspace, inventory_path, previous_manifest=No
             entries.append({
                 "instrument_id": instrument, "filename": target.name,
                 "size_bytes": size, "sha256": checksum,
-                "provenance": {"source_path": f"{serial}/geo_DET_REQ.csv", "manual_edits": False},
+                "provenance": {"source_path": f"{serial}/geo_DET_REQ.csv"},
             })
             inputs.append({"instrument_id": instrument, "source_path": f"{serial}/geo_DET_REQ.csv",
                            "status": "included", "size_bytes": size, "sha256": checksum})
@@ -105,7 +110,7 @@ def create_snapshot(source_root, workspace, inventory_path, previous_manifest=No
             raise ValueError(f"no publishable GeoCSV data records; exclusions: {inputs}")
         if previous_manifest:
             missing_ids = {entry["instrument_id"] for entry in previous} - {entry["instrument_id"] for entry in entries}
-            if missing_ids:
+            if missing_ids and not allow_metadata_changes:
                 raise ValueError(f"previously published instruments became recordless: {sorted(missing_ids)}")
         if source_provenance(source_root) != provenance:
             raise ValueError("source Git revision changed during staging")
@@ -127,6 +132,9 @@ def create_snapshot(source_root, workspace, inventory_path, previous_manifest=No
                 raise FileExistsError(f"conflicting immutable snapshot: {destination}")
             if (destination / "source_provenance.json").read_bytes() != provenance_payload:
                 raise FileExistsError(f"conflicting immutable source provenance: {destination}")
+            for path in candidate.glob('*.clash.json'):
+                if not (destination / path.name).exists() or path.read_bytes() != (destination / path.name).read_bytes():
+                    raise FileExistsError('conflicting immutable producer clash evidence')
             write_staging_inventory(collection, manifest, inputs, selected)
             return destination
         # Rename the whole candidate only when complete. No partial frozen release.
@@ -162,12 +170,14 @@ def main():
                         help="reviewed CSV mapping: instrument_serial,instrument_id")
     parser.add_argument("--instruments", nargs="+", metavar="ID",
                         help="freeze only these instrument IDs; omitted means every source instrument")
+    parser.add_argument('--allow-metadata-changes', action='store_true',
+                        help='allow missing previous instruments during local staging; publication still gates changes')
     parser.add_argument("--previous-manifest", type=Path,
                         help="required operationally after first publication to detect missing instruments")
     args = parser.parse_args()
     try:
         candidate = create_snapshot(args.source_root, args.workspace, args.inventory, args.previous_manifest,
-                                    instruments=args.instruments)
+                                    instruments=args.instruments, allow_metadata_changes=args.allow_metadata_changes)
         print(candidate)
         sidecar = candidate.parent.parent / "staging" / candidate.name / "inventory.json"
         excluded = [item["instrument_id"] for item in read_json(sidecar)["instruments"] if item["status"] == "excluded_recordless"]

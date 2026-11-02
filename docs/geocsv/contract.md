@@ -9,7 +9,7 @@ read-only hosting. See [workflow](workflow.md) and [SAC verification](sac-verifi
 
 ## Payload and software requirements
 
-Require Python >= 3.11 and consumer >= 0.27.0. Creation and inspection require
+Require Python >= 3.11 and consumer >= 0.28.0. Creation and inspection require
 the exact first-line schema declaration and literal six-digit UTC `#created`,
 including recordless sources. Repeated schema declarations and comments after
 the column header raise; quoted multiline continuations remain CSV data.
@@ -18,7 +18,7 @@ selects `Derivation:Recording:` rows and uses `Time`; it projects explicit
 Recording Elevation and never supplies missing source defaults.
 
 Package version, payload schema, report schema and literal snapshot identity
-are independent. Reports use schema 4 and `recording_records`; they bind exact
+are independent. Reports use schema 5 and `recording_rows`; they bind exact
 inputs, validation code and dependencies. A report for another inventory or
 software revision cannot accept this candidate.
 
@@ -140,11 +140,11 @@ Staging schema 1 records complete-source accounting for default creation.
 Staging schema 2 records a sorted, nonempty, unique `instrument_ids` array for
 explicit selections; its instrument entries must cover exactly that selection,
 including recordless exclusions. Both versions remain supported. Validation
-reports use schema 4.
+reports use schema 5.
 
 The creator emits entries sorted by ID. Source provenance uses a
 processed-root-relative `source_path` (`<serial>/geo_DET_REQ.csv`) and
-`manual_edits: false`. Payloads are copied verbatim. Manifests are deterministic;
+no edit-history flag. Payloads are copied verbatim. Manifests are deterministic;
 publication/report times must not cause same-ID manifest regeneration. Optional
 descriptive fields are retained by clients, without becoming instructions.
 `created_utc`, when supplied, is descriptive rather than a release ID.
@@ -210,7 +210,7 @@ update latest last. Failures before activation leave the previous latest selecte
 An unconfirmed activation requires inspecting remote state before retrying. Serialize
 publication and use conditional object writes to prevent conflicting updates.
 
-The publisher owns `scripts/geocsv/validate_snapshot.py`, the version 4 report
+The publisher owns `scripts/geocsv/validate_snapshot.py`, the version 5 report
 format and `scripts/geocsv/gate_snapshot.py`. Validation covers every original
 MiniSEED and independently read paired SAC for included instruments; `.mhpsd`
 spectra are outside scope and are not counted. Missing pairs, unsupported
@@ -253,3 +253,6 @@ scoped archive Git commit. Receipts and inventories are not public release
 objects. Publication success and local recording failure are separate outcomes;
 `--record-only` finishes recording without network writes. No automatic pushes
 are performed. See [the workflow](workflow.md).
+
+See [publication reports](publication-reports.md) for the current mandatory
+coverage, clash-report contract, report names, diff policy and explicit overrides.
