@@ -2,6 +2,7 @@
 
 ## 0.7.0 — unreleased
 
+- Require GPS measurements to bracket all rows during validation and acceptance.
 - Read `r2.json` and the default `instruments.csv` from the directory named by
   `MERMAID_PUBLISHER_GEOCSV_CONFIG`.
 - Keep explicit `--inventory` and destination options as overrides.

@@ -1,8 +1,26 @@
-"""Recording coverage and verification of producer-supplied clash evidence."""
+"""GPS time bounds, Recording coverage and producer-supplied clash evidence."""
 
 from pathlib import Path
 
 from inspect_snapshot import fingerprint, read_json
+
+
+def check_gps_bounds(tables):
+    """Require GPS measurements to bracket every row, with inclusive bounds."""
+    for table in tables:
+        if table.empty:
+            continue
+        gps = table.loc[table.MethodIdentifier.str.startswith('Measurement:Position:')]
+        if gps.empty:
+            raise ValueError('nonempty GeoCSV requires GPS measurements for time bounds')
+        first, last = gps.Time.min(), gps.Time.max()
+        outside = table.loc[(table.Time < first) | (table.Time > last)]
+        if not outside.empty:
+            lines = table.attrs['geocsv'].line_numbers
+            indices = list(outside.index)
+            raise ValueError(f'{len(indices)} GeoCSV rows outside GPS time bounds; '
+                             f'source indices {indices[:10]}, '
+                             f'lines {[lines[index] for index in indices[:10]]}')
 
 
 def recording_evidence(candidate, entry, tables, pairs):
@@ -10,6 +28,7 @@ def recording_evidence(candidate, entry, tables, pairs):
 
     No producer algorithms or MER inputs are used here.
     """
+    check_gps_bounds(tables)
     rows = {}
     for dataset_index, table in enumerate(tables):
         metadata = table.attrs['geocsv']

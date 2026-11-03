@@ -12,11 +12,13 @@ consumer is installed as a regular package, not in editable mode:
 
 ```bash
 python3.12 -m venv .venv
-.venv/bin/python -m pip install -r requirements/geocsv.txt ../mermaid-geocsv
-.venv/bin/python -m pip check
-.venv/bin/python -B -m unittest discover -s tests -v
+source .venv/bin/activate
+python -m pip install -r requirements/geocsv.txt ../mermaid-geocsv
+python -m pip check
+python -B -m unittest discover -s tests -v
 ```
 
+Activate `.venv` in each new shell session before running publisher commands.
 Python >= 3.11 and mermaid-geocsv >= 0.28.0 are required. Python 3.12 is
 the documented full-suite setup. Only MERMAID payload
 schema 1.0.0 is supported. Repository version authority is `version`;
@@ -25,7 +27,7 @@ and code hashes, not just version numbers.
 
 ## Workflow
 
-The three commands run as `.venv/bin/python scripts/geocsv/<file>`:
+With `.venv` active, the three commands run as `python scripts/geocsv/<file>`:
 
 | Command | Responsibility |
 | --- | --- |
@@ -84,13 +86,17 @@ checkouts; the SDK resolves credentials.
 ## Verification
 
 ```bash
-.venv/bin/python -B -m unittest discover -s tests -v
+python -B -m unittest discover -s tests -v
 ```
 
 Tests use synthetic temporary inputs, mocked storage and disposable fixture
 Git repositories. They do not publish real data or modify the publication
 archive. Changed candidate/source bytes or validation software require fresh
 acceptance; existing manifests, reports and receipts remain immutable.
+
+Every nonempty published dataset requires GPS Position measurements that bracket
+all row timestamps, inclusively and without tolerance. Producer exclusions are
+retained locally in `outside_filterDate_gps.geocsv`; this audit file is not uploaded.
 
 See [publication reports](docs/geocsv/publication-reports.md) for mandatory Recording
 coverage, producer clash verification, schema-5 names and published mapping/diff

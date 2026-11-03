@@ -98,8 +98,12 @@ waveforms still fail mandatory coverage. The clean-source Git requirement is
 unchanged. Publisher 0.6.1 requires fresh validation evidence for this scope;
 existing reports and snapshots remain immutable.
 
-Automaid v4.9.1 excludes IcCycle and Init inputs while collecting GeoCSV rows and clash
-evidence, aligning fresh producer output with publisher 0.6.1 waveform scope.
+Automaid v4.9.2 collects measurements from Init and IcCycle, but excludes their
+Recording and crossing rows. Normal output uses the deployment window and
+retained GPS span. `outside_filterDate_gps.geocsv` retains excluded formatted
+rows locally; it is not uploaded. Publisher acceptance checks GPS bracketing
+for every normal row independently of producer selection.
+This aligns derived output with publisher 0.6.1 waveform scope.
 Earlier generations may still have unmatched Recording rows after IcCycle/Init
 waveforms are excluded; they require producer regeneration, not a coverage
 waiver or publisher rewrite. Existing artifacts remain immutable.

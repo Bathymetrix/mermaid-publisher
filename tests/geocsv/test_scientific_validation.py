@@ -61,7 +61,9 @@ class ArchiveValidation(unittest.TestCase):
         reference.write(str(self.sac))
         self.geo = self.serial / "geo_DET_REQ.csv"
         self.geo.write_text(HEADER +
-            "Derivation:Recording:automaid-v0,2020-01-01T00:00:00.000000Z,MH,P0006,00,BDH,Q,12.345678,-150.123456,0,10000,MERMAID_test,20,4,,0\n")
+            "Derivation:Recording:automaid-v0,2020-01-01T00:00:00.000000Z,MH,P0006,00,BDH,Q,12.345678,-150.123456,0,10000,MERMAID_test,20,4,,0\n" +
+            "Measurement:Position:synthetic,2019-12-31T00:00:00.000000Z,MH,P0006,,,,12,-150,,,MERMAID_test,,,,\n" +
+            "Measurement:Position:synthetic,2020-01-02T00:00:00.000000Z,MH,P0006,,,,12,-150,,,MERMAID_test,,,,\n")
         self.inventory = self.root / "instruments.csv"
         self.inventory.write_text("instrument_serial,instrument_id\nserial,P0006\n")
         self.work = self.root / "publication"
@@ -91,6 +93,17 @@ class ArchiveValidation(unittest.TestCase):
             self.report_path.write_bytes(json_bytes(report))
             with self.assertRaises(AcceptanceError):
                 require_acceptance(self.candidate, self.report_path, self.source)
+
+    def test_gps_time_bounds_block_validation_and_acceptance(self):
+        self.geo.write_text(self.geo.read_text().replace(
+            '2019-12-31T00:00:00.000000Z', '2020-01-01T00:00:00.000001Z'))
+        self.candidate = create_snapshot(self.source, self.root / 'gps-bounds', self.inventory)
+        report = self.validate()
+        self.assertEqual(report['status'], 'failed')
+        self.assertEqual(report['pairs'][0]['status'], 'passed')
+        self.assertIn('outside GPS time bounds', str(report['failures']))
+        with self.assertRaises(AcceptanceError):
+            require_acceptance(self.candidate, self.report_path, self.source)
 
     def test_mutated_evidence_rejected_without_trusting_passed_flag(self):
         valid = self.validate()
@@ -308,7 +321,8 @@ class ArchiveValidation(unittest.TestCase):
             require_acceptance(self.candidate, self.report_path, self.source)
 
     def test_one_mseed_with_two_eligible_rows_blocks(self):
-        row = self.geo.read_text().splitlines()[-1]
+        row = next(line for line in self.geo.read_text().splitlines()
+                   if line.startswith('Derivation:Recording:'))
         self.geo.write_text(self.geo.read_text() + row.replace('00:00:00.000000Z', '00:00:00.000001Z') + '\n')
         self.candidate = create_snapshot(self.source, self.root / 'ambiguous', self.inventory)
         report = self.validate()

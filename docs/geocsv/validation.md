@@ -204,8 +204,18 @@ waveforms still fail mandatory coverage. The clean-source Git requirement is
 unchanged. Publisher 0.6.1 requires fresh validation evidence for this scope;
 existing reports and snapshots remain immutable.
 
-Automaid v4.9.1 excludes IcCycle and Init inputs while collecting GeoCSV rows and clash
-evidence, aligning fresh producer output with publisher 0.6.1 waveform scope.
+Automaid v4.9.2 collects measurements from Init and IcCycle, but excludes their
+Recording and crossing rows. Normal output uses the explicit deployment window
+and retained GPS span; excluded formatted rows are local audit evidence in
+`outside_filterDate_gps.geocsv` and are not published.
+This aligns derived output with publisher 0.6.1 waveform scope.
+
+Validation and acceptance recompute GPS time bounds from each parsed dataset.
+Every row must be at or between the first and last Position measurement times;
+there is no tolerance. A nonempty dataset without GPS fails. Failure details
+identify offending source indices and physical lines. No measurement or derived
+row is repaired or filtered by the publisher. Schema 5 is unchanged; workflow
+fingerprints require fresh reports after this policy change.
 Earlier generations may still have unmatched Recording rows after IcCycle/Init
 waveforms are excluded; they require producer regeneration, not a coverage
 waiver or publisher rewrite. Existing artifacts remain immutable.
