@@ -388,24 +388,24 @@ def record_publication(candidate, report, base_url, object_prefix, *, already_se
 
 def read_publication_config():
     """Load optional environment-selected settings without disclosing private values."""
-    path = os.environ.get("MERMAID_PUBLISHER_CONFIG")
+    path = os.environ.get("MERMAID_PUBLISHER_GEOCSV_CONFIG")
     if not path:
         return {}
     try:
         config = read_json(Path(path).expanduser())
     except (OSError, ValueError, UnicodeError):
-        raise ValueError("cannot read MERMAID_PUBLISHER_CONFIG as a JSON settings file") from None
+        raise ValueError("cannot read MERMAID_PUBLISHER_GEOCSV_CONFIG as a JSON settings file") from None
     keys = {"profile", "bucket", "endpoint_url", "base_url", "object_prefix"}
     if (not isinstance(config, dict) or config.keys() - keys
             or any(not isinstance(value, str) or not value.strip() for value in config.values())):
-        raise ValueError("MERMAID_PUBLISHER_CONFIG accepts only profile, bucket, endpoint_url, "
+        raise ValueError("MERMAID_PUBLISHER_GEOCSV_CONFIG accepts only profile, bucket, endpoint_url, "
                          "base_url and object_prefix with nonempty string values")
     return config
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__, epilog=(
-        "MERMAID_PUBLISHER_CONFIG may name a private JSON settings file; "
+        "MERMAID_PUBLISHER_GEOCSV_CONFIG may name a private JSON settings file; "
         "explicit destination options override file settings. Credentials use the SDK provider."))
     parser.add_argument("--candidate", type=Path)
     parser.add_argument("--report", type=Path)

@@ -187,7 +187,7 @@ class ProvenanceGate(unittest.TestCase):
 
 class PublicationCommand(unittest.TestCase):
     def setUp(self):
-        environment = patch.dict("os.environ", {"MERMAID_PUBLISHER_CONFIG": ""})
+        environment = patch.dict("os.environ", {"MERMAID_PUBLISHER_GEOCSV_CONFIG": ""})
         environment.start()
         self.addCleanup(environment.stop)
         science.ArchiveValidation.setUp(self)
@@ -219,7 +219,7 @@ class PublicationCommand(unittest.TestCase):
                                       "base_url": "https://example.test/geocsv/testing/",
                                       "object_prefix": "geocsv/testing"}))
         self.command = self.command[:self.command.index("--base-url")]
-        with patch.dict("os.environ", {"MERMAID_PUBLISHER_CONFIG": str(config)}):
+        with patch.dict("os.environ", {"MERMAID_PUBLISHER_GEOCSV_CONFIG": str(config)}):
             store = self.invoke()
         store.assert_called_once_with("https://storage.example.invalid", "fixture", profile="fixture-profile")
         self.assertEqual(self.store.writes[-1], "geocsv/testing/latest.json")

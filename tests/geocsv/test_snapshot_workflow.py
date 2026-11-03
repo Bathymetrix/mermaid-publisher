@@ -267,7 +267,7 @@ class Publication(unittest.TestCase):
 
     def setUp(self):
         Snapshots.setUp(self)
-        self.environment = patch.dict(os.environ, {"MERMAID_PUBLISHER_CONFIG": ""})
+        self.environment = patch.dict(os.environ, {"MERMAID_PUBLISHER_GEOCSV_CONFIG": ""})
         self.environment.start()
         self.addCleanup(self.environment.stop)
         self.candidate = self.create()
@@ -437,13 +437,14 @@ class PublicationConfiguration(unittest.TestCase):
                          "base_url": "https://example.test/geocsv/testing/",
                          "object_prefix": "geocsv/testing"}
         self.config.write_text(json.dumps(self.settings))
-        environment = patch.dict(os.environ, {"MERMAID_PUBLISHER_CONFIG": str(self.config)})
+        environment = patch.dict(os.environ, {"MERMAID_PUBLISHER_GEOCSV_CONFIG": str(self.config)})
         environment.start()
         self.addCleanup(environment.stop)
 
     def test_file_settings_and_unset_environment(self):
         self.assertEqual(publisher.read_publication_config(), self.settings)
-        with patch.dict(os.environ, {"MERMAID_PUBLISHER_CONFIG": ""}):
+        with patch.dict(os.environ, {"MERMAID_PUBLISHER_GEOCSV_CONFIG": "",
+                                          "MERMAID_PUBLISHER_CONFIG": str(self.config)}):
             self.assertEqual(publisher.read_publication_config(), {})
         with patch.dict(os.environ, clear=True):
             self.assertEqual(publisher.read_publication_config(), {})
@@ -459,7 +460,7 @@ class PublicationConfiguration(unittest.TestCase):
                 publisher.read_publication_config()
             self.assertNotIn(private, str(caught.exception))
         self.config.unlink()
-        with self.assertRaisesRegex(ValueError, "cannot read MERMAID_PUBLISHER_CONFIG"):
+        with self.assertRaisesRegex(ValueError, "cannot read MERMAID_PUBLISHER_GEOCSV_CONFIG"):
             publisher.read_publication_config()
 
     def test_plan_loads_file_and_cli_overrides_without_authentication(self):

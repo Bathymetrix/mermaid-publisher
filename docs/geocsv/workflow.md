@@ -223,11 +223,12 @@ credentials through the SDK provider; never print or copy them.
 
 ### Publication configuration
 
-`MERMAID_PUBLISHER_CONFIG` optionally names a private JSON settings file outside
-software checkouts and the publication archive. Explicit CLI destination options
-override file settings. When the variable is unset or empty, supply the existing
-CLI options. A configured file that cannot be read or has invalid settings blocks
-the operation; settings are not printed in configuration errors.
+`MERMAID_PUBLISHER_GEOCSV_CONFIG` optionally names a private JSON settings file
+outside software checkouts and the publication archive. Explicit CLI
+destination options override file settings. When the variable is unset or
+empty, supply the CLI options. A configured file that cannot be read or has
+invalid settings blocks the operation; settings are not printed in
+configuration errors. The former `MERMAID_PUBLISHER_CONFIG` name is not read.
 
 | JSON key | Publication setting |
 | --- | --- |

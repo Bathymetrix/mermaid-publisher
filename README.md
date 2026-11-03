@@ -39,6 +39,23 @@ publication intent. Actual publication requires the dedicated Git archive
 read-only; original waveform archives are not copied. Selection is frozen at
 creation; validation and transfer cover that exact inventory.
 
+### External inputs
+
+- `--source-root` reads canonical source data from `$MERMAID/processed`.
+- `--workspace` names the base publication archive workspace,
+  `$MERMAID/publisher/geocsv`; `--inventory` names a separate reviewed
+  instrument-mapping CSV supplied by the operator. Neither path is inferred
+  from the publisher's configuration directory.
+- `MERMAID_PUBLISHER_GEOCSV_CONFIG` optionally names a private JSON file with
+  publication destination settings and an optional SDK profile. Explicit
+  destination command options override file settings. The former
+  `MERMAID_PUBLISHER_CONFIG` name is no longer read.
+  The publisher does not search `~/.config` or read `r2.json` by filename.
+- For remote publication, boto3 resolves credentials through its SDK provider,
+  commonly from `~/.aws/credentials` and `~/.aws/config` or AWS environment
+  variables. The publisher does not read credential values from the JSON
+  settings file. Keep credentials outside the software and publication archive.
+
 Publication also builds `MERMAID.geocsv.tar.gz` from the manifested instrument
 files. The bundle is served beside them, outside `manifest.files`; individual
 hashes and the scientific report are unchanged. Archive pages use a plain
@@ -58,6 +75,7 @@ checkouts; the SDK resolves credentials.
 - [Scientific comparisons and report schema](docs/geocsv/validation.md)
 - [Final waveform and SAC export checks](docs/geocsv/sac-verification.md)
 - [Artifact-bound evidence](docs/geocsv/evidence.md)
+- [Production pre-release checklist](docs/geocsv/pre-release-checklist.md)
 - [Hosting runbook](../bathymetrix-site/docs/geocsv-hosting.md)
 
 ## Verification
