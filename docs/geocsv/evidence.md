@@ -7,7 +7,8 @@ or software. Use [the workflow](workflow.md), [contract](contract.md) and
 
 ## Schema 1.0.0
 
-- [Hosted P0006/P0045 snapshot](schema1-testing-publication.md): manifest/report hashes, source revision, receipt and scoped archive commit.
+- [Current hosted P0006/P0045 snapshot](testing-publication-20261103.md): automaid v4.9.2 measurement restoration, schema-5 acceptance, bundle/reports, receipt and scoped archive commit.
+- [October 30 testing publication](schema1-testing-publication.md): retained predecessor manifest/report hashes, source revision, receipt and scoped archive commit.
 - [Full regenerated-corpus validation](regenerated-corpus-validation.md): separate 103-payload candidate and 43,365 waveform pairs; not acceptance for the two-instrument manifest.
 
 ## Retained verification records

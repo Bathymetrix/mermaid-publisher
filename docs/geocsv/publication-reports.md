@@ -69,6 +69,11 @@ Initial publication has a null predecessor and reports all rows as additions.
 Publication reads the current testing latest once, verifies its manifest and
 payload hashes, and binds the comparison to that exact predecessor. Edits and
 deletions fail by default; --allow-metadata-changes explicitly allows them.
+An automaid revision change alone in a Recording or crossing MethodIdentifier
+does not require this override when all other row bytes are identical. The
+exact diff still includes both original rows for provenance. Other field or
+formatting changes, row deletions, and reordering still require review; sensor
+revisions and producer-like strings in other fields are not exempt.
 A payload-schema mismatch writes 'simple diff cannot be made' and requires
 --allow-schema-change. These options cannot waive scientific comparisons,
 unique associations, Recording coverage or valid producer-report binding.
@@ -86,8 +91,9 @@ report before conditional latest activation. Receipts bind their checksums;
 archive commit and network-free receipt recovery include them. Old receipts
 without auxiliary reports retain their original recovery behavior.
 
-The host serves these objects read-only and lists reports when present. Source
-support is local until separately authorized deployment and publication. The
+The host serves these objects read-only and lists reports when present. Worker
+route support was deployed on 2026-11-03; new report objects require a separately
+authorized publication and exact public-byte verification. The
 future Metadata Changes website page is outside this implementation scope.
 
 IcCycle and Init waveform paths are excluded from publisher validation and accounting.

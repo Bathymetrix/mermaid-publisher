@@ -13,6 +13,30 @@ from geocsv.schema_helpers import HEADER
 
 
 class Diffs(unittest.TestCase):
+    def test_producer_revision_only_keeps_exact_diff_without_metadata_flag(self):
+        for method in ('Derivation:Recording', 'Interpolation:Crossing-Ascent',
+                       'Interpolation:Crossing-Descent'):
+            for quote in ('', '"'):
+                old = f'{quote}{method}:automaid-v4.6.2{quote},unchanged\n'
+                new = old.replace('v4.6.2', 'v4.9.2')
+                with self.subTest(method=method, quote=quote):
+                    diff, schema, changed = data_diff((HEADER+old).encode(), (HEADER+new).encode())
+                    self.assertEqual(diff, f'-0,{old}+0,{new}'.encode())
+                    self.assertFalse(schema or changed)
+
+    def test_producer_revision_does_not_hide_other_changes_or_deletions(self):
+        old = 'Derivation:Recording:automaid-v4.6.2,unchanged\n'
+        new = old.replace('v4.6.2', 'v4.9.2')
+        for content in (new.replace('unchanged', 'changed'), '', new.replace('\n', '\r\n')):
+            with self.subTest(content=content):
+                self.assertTrue(data_diff((HEADER+old).encode(), (HEADER+content).encode())[2])
+        # Producer-like strings elsewhere in a row and sensor revisions remain metadata.
+        for row in ('Measurement:Position:sensor-v1,value\n', 'a,automaid-v1\n'):
+            self.assertTrue(data_diff((HEADER+row).encode(), (HEADER+row.replace('v1','v2')).encode())[2])
+        before = HEADER + old + 'other,row\n'
+        after = HEADER + 'other,row\n' + new
+        self.assertTrue(data_diff(before.encode(), after.encode())[2])
+
     def test_insert_does_not_report_shifted_rows(self):
         before = (HEADER + 'a,b\nc,d\n').encode()
         after = (HEADER + 'a,b\nx,y\nc,d\n').encode()

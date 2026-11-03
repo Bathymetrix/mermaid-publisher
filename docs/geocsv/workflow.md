@@ -153,8 +153,8 @@ hosted inventory requires a new upstream timestamp, not an edited manifest.
 Using the candidate ID printed by creation, set a task-specific shell variable:
 
 ```bash
-GEOCSV_CANDIDATE="$MERMAID/publisher/geocsv/testing/snapshots/2026-10-30T18-08-32.316000Z"
-GEOCSV_REPORT="$MERMAID/publisher/geocsv/testing/validation/2026-10-30T18-08-32.316000Z/validation-new-attempt.json"
+GEOCSV_CANDIDATE="$MERMAID/publisher/geocsv/testing/snapshots/2026-11-03T22-29-17.981000Z"
+GEOCSV_REPORT="$MERMAID/publisher/geocsv/testing/validation/2026-11-03T22-29-17.981000Z/validation-new-attempt.json"
 .venv/bin/python scripts/geocsv/validate_snapshot.py \
   --candidate "$GEOCSV_CANDIDATE" --source-root "$MERMAID/processed" \
   --report "$GEOCSV_REPORT"
@@ -275,9 +275,11 @@ manifest or scientific report. Receipts with `bundle_filename` bind its fixed
 name; recording checks member bytes against existing manifest hashes. Recovery
 for receipts without a bundle is unchanged. `--plan` does not create a bundle.
 
-Local bundle and release-directory support in publisher 0.5.0 and the Worker
-does not establish deployed availability. Existing hosted snapshots are not
-backfilled automatically; Worker deployment and uploads require authorization.
+The Worker support for bundles, auxiliary reports and release directories was
+deployed on 2026-11-03. Live directory GET/HEAD and pinned downloads of existing
+payloads passed. Publication still verifies every newly uploaded object over
+HTTPS before activation. Existing hosted snapshots are not backfilled
+automatically; further Worker deployments and uploads require authorization.
 
 Remote publication and local Git recording are separate transactions. A local
 recording failure exits 2 with `published; local recording incomplete`. Its

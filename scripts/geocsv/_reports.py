@@ -6,6 +6,7 @@ import hashlib
 import io
 import json
 from pathlib import Path
+import re
 
 from inspect_snapshot import check_manifest, fingerprint, json_bytes, read_json, release_component
 
@@ -30,6 +31,16 @@ def source_rows(content):
     return schema, rows
 
 
+def _without_producer_revision(row):
+    """Ignore only the automaid revision; preserve all other row bytes."""
+    match = re.match(
+        r'^("?)(?:Derivation:Recording|Interpolation:Crossing-(?:Ascent|Descent))'
+        r':automaid-(?P<version>v[0-9][0-9A-Za-z.+_-]*)\1,', row)
+    if match is None:
+        return row
+    return row[:match.start('version')], row[match.end('version'):]
+
+
 def data_diff(previous, current):
     """Return exact -/+ source-index rows, plus schema/change classifications."""
     if previous is not None and current is not None:
@@ -41,15 +52,19 @@ def data_diff(previous, current):
     current_schema, current_rows = source_rows(current) if current is not None else (None, [])
     previous_schema, previous_rows = source_rows(previous) if previous is not None else (None, [])
     output = []
-    removed = False
     for tag, first, stop, new_first, new_stop in SequenceMatcher(
             None, previous_rows, current_rows, autojunk=False).get_opcodes():
         if tag in ('replace', 'delete'):
-            removed = True
             output.extend(f'-{index},{previous_rows[index]}' for index in range(first, stop))
         if tag in ('replace', 'insert'):
             output.extend(f'+{index},{current_rows[index]}' for index in range(new_first, new_stop))
-    return ''.join(output).encode('utf-8'), False, removed
+    # The audit diff stays exact. Producer revision alone does not change the
+    # scientific row, but edits, deletions and reordering still require review.
+    changed = any(tag in ('replace', 'delete') for tag, *_ in SequenceMatcher(
+        None, [_without_producer_revision(row) for row in previous_rows],
+        [_without_producer_revision(row) for row in current_rows],
+        autojunk=False).get_opcodes())
+    return ''.join(output).encode('utf-8'), False, changed
 
 
 def publication_reports(candidate, report, store, object_prefix, previous_id, *,

@@ -275,6 +275,11 @@ Publication validation and acceptance independently require GPS measurements
 to bracket every row of each nonempty dataset, with inclusive bounds and no
 time tolerance. Missing GPS or an out-of-span row blocks publication. This is
 a publication policy, not a consumer parsing or interpolation rule.
+
+Producer revision changes alone in Recording/crossing MethodIdentifiers do
+not require a metadata-change override when the rest of each row is identical.
+Exact diffs still retain those provenance changes. Other edits, deletions and
+reordering remain subject to the explicit metadata-change gate.
 Earlier generations may still have unmatched Recording rows after IcCycle/Init
 waveforms are excluded; they require producer regeneration, not a coverage
 waiver or publisher rewrite. Existing artifacts remain immutable.
