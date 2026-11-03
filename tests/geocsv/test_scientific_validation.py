@@ -349,5 +349,61 @@ class ArchiveValidation(unittest.TestCase):
         require_acceptance(self.candidate, self.report_path, self.source)
 
 
+    def test_excluded_files_are_not_opened_fingerprinted_or_counted(self):
+        for name in ('0002IcCycle', '0003iccycle', '0004Init', '0005iNiT'):
+            excluded = self.serial / name / 'nested'
+            excluded.mkdir(parents=True)
+            (excluded / 'bad.mseed').write_bytes(b'not a waveform')
+            (excluded / 'bad.sac').write_bytes(b'not a waveform')
+            (excluded / 'bad.seed').write_bytes(b'unsupported')
+        named = self.cycle / 'excluded-IcCycle.mseed'
+        named.write_bytes(b'not a waveform')
+        (self.cycle / 'excluded-iNiT.mseed').write_bytes(b'not a waveform')
+        report = self.validate()
+        self.assertEqual(report['status'], 'passed', report['failures'])
+        self.assertEqual(report['summary']['pairs'], 1)
+        self.assertEqual(report['summary']['unsupported_files'], 0)
+        self.assertFalse(any(marker in (x['directory'] + '/' + x['filename']).casefold()
+                             for x in report['source_files'] for marker in ('iccycle', 'init')))
+        named.write_bytes(b'changed excluded bytes')
+        require_acceptance(self.candidate, self.report_path, self.source)
+
+    def test_iccycle_only_waveform_does_not_waive_recording_coverage(self):
+        excluded = self.serial / '0002IcCycle'
+        excluded.mkdir()
+        self.mseed.rename(excluded / self.mseed.name)
+        self.sac.rename(excluded / self.sac.name)
+        report = self.validate()
+        self.assertEqual(report['summary']['pairs'], 0)
+        self.assertEqual(report['status'], 'failed')
+        self.assertIn('unmatched Recording', str(report['failures']))
+
+    def test_init_only_waveform_does_not_waive_recording_coverage(self):
+        excluded = self.serial / '0000iNiT'
+        excluded.mkdir()
+        self.mseed.rename(excluded / self.mseed.name)
+        self.sac.rename(excluded / self.sac.name)
+        report = self.validate()
+        self.assertEqual(report['summary']['pairs'], 0)
+        self.assertEqual(report['status'], 'failed')
+        self.assertIn('unmatched Recording', str(report['failures']))
+
+    def test_recordless_exclusion_ignores_iccycle_and_init_files(self):
+        empty = self.source / 'empty'
+        excluded = empty / '0001IcCycle'
+        excluded.mkdir(parents=True)
+        (empty / 'geo_DET_REQ.csv').write_text(HEADER)
+        (excluded / 'unexamined.mseed').write_bytes(b'ignored')
+        init = empty / '0000iNiT'
+        init.mkdir()
+        (init / 'unexamined.mseed').write_bytes(b'ignored')
+        self.inventory.write_text(self.inventory.read_text() + 'empty,R0060\n')
+        self.candidate = create_snapshot(self.source, self.root / 'recordless-iccycle', self.inventory)
+        report = self.validate()
+        self.assertEqual(report['status'], 'passed', report['failures'])
+        self.assertEqual(report['staging']['excluded_recordless'], 1)
+        require_acceptance(self.candidate, self.report_path, self.source)
+
+
 if __name__ == "__main__":
     unittest.main()

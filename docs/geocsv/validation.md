@@ -195,3 +195,17 @@ file fingerprints, versions, affected pair and comparison measurements.
 
 See [publication reports](publication-reports.md) for the current mandatory
 coverage, clash-report contract, report names, diff policy and explicit overrides.
+
+IcCycle and Init waveform paths are excluded from publisher validation and accounting.
+Directory or filename components containing `IcCycle` or `Init` (case-insensitive) are
+skipped before opening or fingerprinting files, including for recordless-source
+checks. GeoCSV is copied verbatim: Recording rows supported only by excluded
+waveforms still fail mandatory coverage. The clean-source Git requirement is
+unchanged. Publisher 0.6.1 requires fresh validation evidence for this scope;
+existing reports and snapshots remain immutable.
+
+Automaid v4.9.1 excludes IcCycle and Init inputs while collecting GeoCSV rows and clash
+evidence, aligning fresh producer output with publisher 0.6.1 waveform scope.
+Earlier generations may still have unmatched Recording rows after IcCycle/Init
+waveforms are excluded; they require producer regeneration, not a coverage
+waiver or publisher rewrite. Existing artifacts remain immutable.

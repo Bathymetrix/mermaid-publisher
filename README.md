@@ -74,3 +74,11 @@ acceptance; existing manifests, reports and receipts remain immutable.
 See [publication reports](docs/geocsv/publication-reports.md) for mandatory Recording
 coverage, producer clash verification, schema-5 names and published mapping/diff
 reports.
+
+IcCycle and Init waveform paths are excluded from publisher validation and accounting.
+Directory or filename components containing `IcCycle` or `Init` (case-insensitive) are
+skipped before opening or fingerprinting files, including for recordless-source
+checks. GeoCSV is copied verbatim: Recording rows supported only by excluded
+waveforms still fail mandatory coverage. The clean-source Git requirement is
+unchanged. Publisher 0.6.1 requires fresh validation evidence for this scope;
+existing reports and snapshots remain immutable.

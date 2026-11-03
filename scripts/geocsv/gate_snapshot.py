@@ -29,7 +29,7 @@ LIMITS = {
     "depth_comparison": "exact SAC float32 or both undefined",
     "elevation_metres": 0,
 }
-SCOPE = "original MiniSEED and paired SAC; spectra excluded without counting"
+SCOPE = "original MiniSEED and paired SAC; spectra, IcCycle and Init files excluded without counting"
 MEASUREMENTS = {
     "association_offset_seconds", "association_rate_error_hz", "sample_count_error",
     "sample_error_native_counts", "sample_error_reference_counts", "interval_error_seconds",
@@ -86,6 +86,16 @@ def source_directories(manifest, source_root):
     return root, sources
 
 
+def _source_walk(directory):
+    """Skip IcCycle and Init paths entirely, before opening or fingerprinting files."""
+    for parent, directories, names in os.walk(directory, followlinks=False):
+        directories[:] = [name for name in directories
+                          if name != '.git' and not any(marker in name.casefold()
+                                                    for marker in ('iccycle', 'init'))]
+        yield parent, [name for name in names
+                       if not any(marker in name.casefold() for marker in ('iccycle', 'init'))]
+
+
 def inventory_sources(manifest, source_root):
     """Fingerprint all waveform inputs; do not open or count spectra/other products."""
     root, directories = source_directories(manifest, source_root)
@@ -95,9 +105,7 @@ def inventory_sources(manifest, source_root):
         clash = directory / 'geocsv-clash.json'
         if clash.exists():
             paths.append((clash, 'clash'))
-        for parent, dirs, names in os.walk(directory, followlinks=False):
-            # Source metadata and credentials are not validation inputs.
-            dirs[:] = [name for name in dirs if name != ".git"]
+        for parent, names in _source_walk(directory):
             for name in names:
                 lower = name.lower()
                 if lower.endswith(".mseed"):
@@ -163,7 +171,7 @@ def check_staging_inventory(candidate, manifest, source_root):
             created, count = inspect_source_geocsv(source, instrument)
             if count or created != item.get("created") or fingerprint(source) != (item.get("size_bytes"), item.get("sha256")):
                 raise AcceptanceError("recordless exclusion changed or has data records")
-            for parent, _, names in os.walk(source.parent):
+            for parent, names in _source_walk(source.parent):
                 if any(name.lower().endswith((".mseed", ".sac", ".seed", ".miniseed", ".ms", ".mseed.gz", ".sac.gz")) for name in names):
                     raise AcceptanceError(f"excluded recordless instrument has unexamined waveforms: {instrument}")
             excluded += 1
