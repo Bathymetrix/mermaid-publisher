@@ -97,14 +97,15 @@ under the same ID raises. Do not edit frozen manifests or historical reports.
 
 ### Local validation without publication
 
-Use an ordinary temporary workspace for a full-corpus check:
+Use an ordinary temporary workspace for a full-corpus check. These commands
+assume `MERMAID_PUBLISHER_GEOCSV_CONFIG` names the private configuration
+directory; otherwise supply `--inventory` explicitly:
 
 ```bash
 GEOCSV_CHECK_WORKSPACE="$(mktemp -d)"
 .venv/bin/python scripts/geocsv/create_snapshot.py \
   --source-root "$MERMAID/processed" \
-  --workspace "$GEOCSV_CHECK_WORKSPACE" \
-  --inventory /path/to/reviewed-instruments.csv
+  --workspace "$GEOCSV_CHECK_WORKSPACE"
 ```
 
 Use the candidate path printed by creation with `validate_snapshot.py` and put
@@ -125,11 +126,13 @@ existing archive's attributes or configuration.
 .venv/bin/python scripts/geocsv/create_snapshot.py \
   --source-root "$MERMAID/processed" \
   --workspace "$MERMAID/publisher/geocsv" \
-  --inventory /path/to/reviewed-instruments.csv \
   --instruments P0006 P0045
 ```
 
-The reviewed CSV has exactly `instrument_serial,instrument_id` columns. Every
+These examples use `instruments.csv` in `$MERMAID_PUBLISHER_GEOCSV_CONFIG`.
+Pass `--inventory /path/to/reviewed-instruments.csv` to select another file;
+one of these inputs is required. The reviewed CSV has exactly
+`instrument_serial,instrument_id` columns. Every
 source serial must be accounted for even with an explicit selection; Station
 must agree for in-scope instruments. Selection happens only at creation and
 is immutable. Unknown or duplicate IDs raise. Recordless sources in scope
@@ -223,11 +226,13 @@ credentials through the SDK provider; never print or copy them.
 
 ### Publication configuration
 
-`MERMAID_PUBLISHER_GEOCSV_CONFIG` optionally names a private JSON settings file
-outside software checkouts and the publication archive. Explicit CLI
-destination options override file settings. When the variable is unset or
-empty, supply the CLI options. A configured file that cannot be read or has
-invalid settings blocks the operation; settings are not printed in
+`MERMAID_PUBLISHER_GEOCSV_CONFIG` optionally names a private directory outside
+software checkouts and the publication archive. Creation defaults to its
+`instruments.csv`; publication reads its `r2.json`. Explicit `--inventory` and
+destination options override the respective configured values. When the
+variable is unset or empty, supply `--inventory` for creation and CLI
+destination options for publication. A configured `r2.json` that cannot be
+read or has invalid settings blocks publication; settings are not printed in
 configuration errors. The former `MERMAID_PUBLISHER_CONFIG` name is not read.
 
 | JSON key | Publication setting |
@@ -239,8 +244,8 @@ configuration errors. The former `MERMAID_PUBLISHER_CONFIG` name is not read.
 | `object_prefix` | `--object-prefix` |
 
 Only these keys are supported, each with a nonempty string value when present.
-Credentials remain with the SDK provider and must not be stored in this file.
-Treat the file as JSON, not shell code. `--plan` loads destination settings but
+Credentials remain with the SDK provider and must not be stored in `r2.json`.
+Treat it as JSON, not shell code. `--plan` loads destination settings but
 performs no storage authentication or writes. `--record-only` does not load the
 file. Configuration does not authorize publication; all scientific and explicit
 authorization gates still apply.

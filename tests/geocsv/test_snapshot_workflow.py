@@ -16,6 +16,7 @@ from types import SimpleNamespace
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts/geocsv"))
 from create_snapshot import create_snapshot
+import create_snapshot as creator
 from inspect_snapshot import fingerprint, json_bytes, release_component, verify_candidate
 import publish_snapshot as publisher
 
@@ -46,6 +47,20 @@ class Snapshots(unittest.TestCase):
 
     def create(self, previous=None, *, instruments=None):
         return create_snapshot(self.source, self.workspace, self.inventory, previous, instruments=instruments)
+
+    def test_cli_uses_configured_inventory_and_explicit_override(self):
+        config = self.root / "config"
+        config.mkdir()
+        (config / "instruments.csv").write_bytes(self.inventory.read_bytes())
+        command = ["create_snapshot.py", "--source-root", str(self.source),
+                   "--workspace", str(self.workspace)]
+        with patch.dict(os.environ, {"MERMAID_PUBLISHER_GEOCSV_CONFIG": str(config)}):
+            with patch.object(sys, "argv", command), patch("sys.stdout", new_callable=io.StringIO) as output:
+                creator.main()
+            self.assertEqual(Path(output.getvalue().strip()), self.workspace.resolve() / "testing/snapshots" / COMPONENT)
+            (config / "instruments.csv").unlink()
+            with patch.object(sys, "argv", command + ["--inventory", str(self.inventory)]), patch("sys.stdout", new_callable=io.StringIO):
+                creator.main()
 
     def test_exact_copy_deterministic_idempotent_inventory(self):
         source = self.file.read_bytes()
@@ -431,13 +446,15 @@ class Publication(unittest.TestCase):
 class PublicationConfiguration(unittest.TestCase):
     def setUp(self):
         Snapshots.setUp(self)
-        self.config = self.root / "settings.json"
+        self.config_directory = self.root / "config"
+        self.config_directory.mkdir()
+        self.config = self.config_directory / "r2.json"
         self.settings = {"profile": "fixture-profile", "bucket": "fixture-bucket",
                          "endpoint_url": "https://storage.example.invalid",
                          "base_url": "https://example.test/geocsv/testing/",
                          "object_prefix": "geocsv/testing"}
         self.config.write_text(json.dumps(self.settings))
-        environment = patch.dict(os.environ, {"MERMAID_PUBLISHER_GEOCSV_CONFIG": str(self.config)})
+        environment = patch.dict(os.environ, {"MERMAID_PUBLISHER_GEOCSV_CONFIG": str(self.config_directory)})
         environment.start()
         self.addCleanup(environment.stop)
 
@@ -460,7 +477,7 @@ class PublicationConfiguration(unittest.TestCase):
                 publisher.read_publication_config()
             self.assertNotIn(private, str(caught.exception))
         self.config.unlink()
-        with self.assertRaisesRegex(ValueError, "cannot read MERMAID_PUBLISHER_GEOCSV_CONFIG"):
+        with self.assertRaisesRegex(ValueError, "cannot read r2.json in MERMAID_PUBLISHER_GEOCSV_CONFIG"):
             publisher.read_publication_config()
 
     def test_plan_loads_file_and_cli_overrides_without_authentication(self):

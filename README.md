@@ -43,14 +43,13 @@ creation; validation and transfer cover that exact inventory.
 
 - `--source-root` reads canonical source data from `$MERMAID/processed`.
 - `--workspace` names the base publication archive workspace,
-  `$MERMAID/publisher/geocsv`; `--inventory` names a separate reviewed
-  instrument-mapping CSV supplied by the operator. Neither path is inferred
-  from the publisher's configuration directory.
-- `MERMAID_PUBLISHER_GEOCSV_CONFIG` optionally names a private JSON file with
-  publication destination settings and an optional SDK profile. Explicit
-  destination command options override file settings. The former
-  `MERMAID_PUBLISHER_CONFIG` name is no longer read.
-  The publisher does not search `~/.config` or read `r2.json` by filename.
+  `$MERMAID/publisher/geocsv`. `--inventory` explicitly selects the reviewed
+  instrument-mapping CSV and overrides the configured default.
+- `MERMAID_PUBLISHER_GEOCSV_CONFIG` optionally names a private directory
+  containing `instruments.csv` and `r2.json`. Creation uses `instruments.csv`
+  when `--inventory` is omitted; publication reads destination settings and an
+  optional SDK profile from `r2.json`. Explicit destination command options
+  override file settings. The former `MERMAID_PUBLISHER_CONFIG` name is not read.
 - For remote publication, boto3 resolves credentials through its SDK provider,
   commonly from `~/.aws/credentials` and `~/.aws/config` or AWS environment
   variables. The publisher does not read credential values from the JSON

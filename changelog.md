@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.7.0 — unreleased
+
+- Read `r2.json` and the default `instruments.csv` from the directory named by
+  `MERMAID_PUBLISHER_GEOCSV_CONFIG`.
+- Keep explicit `--inventory` and destination options as overrides.
+- Reject hour 24 in release timestamps consistently across supported Python versions.
+
 ## 0.5.0 — unreleased
 
 - Publish `MERMAID.geocsv.tar.gz` with every new snapshot, containing exactly

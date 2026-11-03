@@ -22,13 +22,13 @@ Do not use a testing snapshot or edit a frozen manifest to activate production.
 ## Private settings and credentials
 
 - [ ] Preserve the current testing settings. Prepare a separate production
-  `r2.json` settings file outside both checkouts and the publication archive;
+  configuration directory outside both checkouts and the publication archive,
+  with its own `r2.json` and reviewed `instruments.csv`;
   review its `base_url`, `object_prefix`, `endpoint_url`, `bucket`, and optional
   `profile` for the approved production destination. The current testing
   settings must not be reused unchanged. Do not store credentials in this JSON
-  file. Select the approved file with `MERMAID_PUBLISHER_GEOCSV_CONFIG` for the
-  production operation. The name `r2.json` is an operator choice, not a path
-  discovered by the publisher.
+  file. Set `MERMAID_PUBLISHER_GEOCSV_CONFIG` to the approved directory for the
+  production operation.
 - [ ] Confirm the SDK credential provider uses the intended scoped account and
   permissions without displaying or copying credential values. Keep Worker
   deployment configuration separate from publisher destination settings.

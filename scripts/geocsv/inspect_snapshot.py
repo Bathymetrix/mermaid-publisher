@@ -15,6 +15,8 @@ def release_component(value):
         r"[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(?:\.[0-9]+)?Z", value
     ):
         raise ValueError(f"invalid UTC release timestamp: {value!r}")
+    if int(value[11:13]) > 23:
+        raise ValueError(f"invalid UTC release timestamp: {value!r}")
     datetime.fromisoformat(value[:19])  # Validate calendar/time, never round fractional identity.
     return value.replace(":", "-")
 

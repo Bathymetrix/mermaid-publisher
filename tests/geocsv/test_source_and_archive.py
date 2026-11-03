@@ -213,13 +213,15 @@ class PublicationCommand(unittest.TestCase):
         return store
 
     def test_config_supplies_destination_and_profile_through_publication(self):
-        config = self.root / "settings.json"
+        config_directory = self.root / "config"
+        config_directory.mkdir()
+        config = config_directory / "r2.json"
         config.write_text(json.dumps({"profile": "fixture-profile", "bucket": "fixture",
                                       "endpoint_url": "https://storage.example.invalid",
                                       "base_url": "https://example.test/geocsv/testing/",
                                       "object_prefix": "geocsv/testing"}))
         self.command = self.command[:self.command.index("--base-url")]
-        with patch.dict("os.environ", {"MERMAID_PUBLISHER_GEOCSV_CONFIG": str(config)}):
+        with patch.dict("os.environ", {"MERMAID_PUBLISHER_GEOCSV_CONFIG": str(config_directory)}):
             store = self.invoke()
         store.assert_called_once_with("https://storage.example.invalid", "fixture", profile="fixture-profile")
         self.assertEqual(self.store.writes[-1], "geocsv/testing/latest.json")

@@ -166,8 +166,8 @@ def main():
     parser.add_argument("--source-root", required=True, type=Path)
     parser.add_argument("--workspace", required=True, type=Path,
                         help="base workspace; testing_only snapshots are created under its testing/ subdirectory")
-    parser.add_argument("--inventory", required=True, type=Path,
-                        help="reviewed CSV mapping: instrument_serial,instrument_id")
+    parser.add_argument("--inventory", type=Path,
+                        help="reviewed CSV mapping; defaults to instruments.csv in MERMAID_PUBLISHER_GEOCSV_CONFIG")
     parser.add_argument("--instruments", nargs="+", metavar="ID",
                         help="freeze only these instrument IDs; omitted means every source instrument")
     parser.add_argument('--allow-metadata-changes', action='store_true',
@@ -176,7 +176,12 @@ def main():
                         help="required operationally after first publication to detect missing instruments")
     args = parser.parse_args()
     try:
-        candidate = create_snapshot(args.source_root, args.workspace, args.inventory, args.previous_manifest,
+        config_directory = os.environ.get("MERMAID_PUBLISHER_GEOCSV_CONFIG")
+        inventory = args.inventory or (Path(config_directory).expanduser() / "instruments.csv"
+                                       if config_directory else None)
+        if inventory is None:
+            raise ValueError("supply --inventory or set MERMAID_PUBLISHER_GEOCSV_CONFIG")
+        candidate = create_snapshot(args.source_root, args.workspace, inventory, args.previous_manifest,
                                     instruments=args.instruments, allow_metadata_changes=args.allow_metadata_changes)
         print(candidate)
         sidecar = candidate.parent.parent / "staging" / candidate.name / "inventory.json"
