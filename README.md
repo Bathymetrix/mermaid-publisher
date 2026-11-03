@@ -6,15 +6,19 @@ generation; `bathymetrix-site` owns read-only hosting.
 
 ## Installation
 
-Use this repository's existing `.venv`. Install the adjacent consumer and the
-scientific/transport requirements together:
+From this repository root, create a fresh Python 3.12 environment and install
+the adjacent consumer with the scientific and transport requirements. The
+consumer is installed as a regular package, not in editable mode:
 
 ```bash
-.venv/bin/python -m pip install ../mermaid-geocsv -r requirements/geocsv.txt
+python3.12 -m venv .venv
+.venv/bin/python -m pip install -r requirements/geocsv.txt ../mermaid-geocsv
 .venv/bin/python -m pip check
+.venv/bin/python -B -m unittest discover -s tests -v
 ```
 
-Python >= 3.11 and mermaid-geocsv >= 0.28.0 are required. Only MERMAID payload
+Python >= 3.11 and mermaid-geocsv >= 0.28.0 are required. Python 3.12 is
+the documented full-suite setup. Only MERMAID payload
 schema 1.0.0 is supported. Repository version authority is `version`;
 validation reports use schema 5. Reports bind the exact installed software
 and code hashes, not just version numbers.
