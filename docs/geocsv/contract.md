@@ -1,7 +1,7 @@
 # GeoCSV publication and download agreement
 
 This is the canonical snapshot, manifest and download contract. The consumer's
-[MERMAID schema 1.0.0](../../../mermaid-geocsv/docs/format-spec.md) defines
+[MERMAID schema 1.0.0-rc1](../../../mermaid-geocsv/docs/format-spec.md) defines
 payload semantics. Automaid writes scientific products; `mermaid-geocsv` owns
 fetch/read/associate and optional SAC station headers; this publisher owns
 snapshot creation, validation, gating, transfer and recording; the site owns
@@ -9,8 +9,9 @@ read-only hosting. See [workflow](workflow.md) and [SAC verification](sac-verifi
 
 ## Payload and software requirements
 
-Require Python >= 3.11 and consumer >= 0.28.0. Creation and inspection require
-the exact first-line schema declaration and literal six-digit UTC `#created`,
+Require Python >= 3.11 and consumer >= 0.29.0. Creation and inspection require
+dataset-first GeoCSV 2.0, an explicit supported 1.0.0-family schema and
+a six-digit UTC `created` value after header padding removal,
 including recordless sources. Repeated schema declarations and comments after
 the column header raise; quoted multiline continuations remain CSV data.
 Full parsing and scientific association belong to the consumer. Validation
@@ -288,3 +289,17 @@ reordering remain subject to the explicit metadata-change gate.
 Earlier generations may still have unmatched Recording rows after IcCycle/Init
 waveforms are excluded; they require producer regeneration, not a coverage
 waiver or publisher rewrite. Existing artifacts remain immutable.
+
+## PPHC header and testing schema
+
+The writer emits dataset-first GeoCSV 2.0 with `schema: MERMAID GeoCSV
+v1.0.0-rc1`, padded comment keywords, unquoted comma/LF declarations and
+producer/publisher/hoster/consumer project descriptions. `references` is reserved
+for the describing paper and omitted until its DOI exists. Final schema 1.0.0
+is reserved for paper publication. Testing accepts the 1.0.0 version family,
+retains the exact revision and applies all scientific requirements.
+
+This header requires consumer >= 0.29.0 and publisher >= 0.8.0. Existing hosted
+snapshots retain their original old header; fetch can retrieve their exact bytes,
+but the dataset-first reader rejects them. No upload, activation or retirement
+is implied by local candidate validation. Canonical sources remain read-only.

@@ -55,24 +55,33 @@ def fingerprint(path):
 def inspect_source_geocsv(path, instrument_id):
     """Require schema 1.0.0 identity; leave full parsing to the consumer validator."""
     created = []
+    schema_seen = False
     station_index = None
     count = 0
     with Path(path).open(encoding="utf-8", newline="") as stream:
         lines = iter(stream)
-        if next(lines, "").rstrip("\r\n") != "# MERMAID GeoCSV schema: 1.0.0":
-            raise ValueError(f"{path}: requires first-line MERMAID GeoCSV schema: 1.0.0 declaration")
+        first = re.fullmatch(r"#\s*dataset\s*:\s*GeoCSV 2\.0\s*", next(lines, "").rstrip("\r\n"))
+        if first is None:
+            raise ValueError(f"{path}: schema requires dataset: GeoCSV 2.0 on the first line")
         for line in lines:
             if line.startswith("#"):
                 if station_index is not None:
                     raise ValueError(f"{path}: comments after the column header are invalid")
-                if line.startswith("# MERMAID GeoCSV schema:"):
-                    raise ValueError(f"{path}: duplicate MERMAID GeoCSV schema declaration")
-                match = re.match(r"#\s*created\s*:\s*(.*?)\s*$", line)
-                if match:
-                    declaration = line.rstrip("\r\n")
-                    if not re.fullmatch(r"#created: [0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\.[0-9]{6}Z", declaration):
-                        raise ValueError(f"{path}: schema 1.0.0 requires literal #created: and six-digit UTC timestamp")
-                    value = declaration.removeprefix("#created: ")
+                key, separator, value = line[1:].partition(":")
+                key, value = key.strip(), value.strip()
+                if not separator:
+                    continue
+                if key == "dataset":
+                    raise ValueError(f"{path}: duplicate dataset declaration")
+                if key == "schema":
+                    if schema_seen:
+                        raise ValueError(f"{path}: duplicate schema declaration")
+                    if not re.fullmatch(r"MERMAID GeoCSV v1\.0\.0(?:-[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?", value):
+                        raise ValueError(f"{path}: unsupported schema; requires MERMAID GeoCSV v1.0.0 family")
+                    schema_seen = True
+                if key == "created":
+                    if not re.fullmatch(r"[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\.[0-9]{6}Z", value):
+                        raise ValueError(f"{path}: #created requires six-digit UTC timestamp")
                     release_component(value)
                     created.append(value)
                 continue
@@ -89,6 +98,8 @@ def inspect_source_geocsv(path, instrument_id):
                 if len(row) != width or row[station_index] != instrument_id:
                     raise ValueError(f"{path}: ambiguous/mismatched Station; expected {instrument_id}")
                 count += 1
+    if not schema_seen:
+        raise ValueError(f"{path}: missing schema declaration")
     if len(created) != 1:
         raise ValueError(f"{path}: requires exactly one valid UTC #created, found {len(created)}")
     if station_index is None:

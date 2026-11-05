@@ -11,13 +11,28 @@ import re
 from inspect_snapshot import check_manifest, fingerprint, json_bytes, read_json, release_component
 
 
+def _schema_declaration(content):
+    """Read the explicit application schema, without interpreting source rows."""
+    lines = content.decode('utf-8').splitlines()
+    if not lines or not re.fullmatch(r'#\s*dataset\s*:\s*GeoCSV 2\.0\s*', lines[0]):
+        return None
+    schemas = []
+    for line in lines[1:]:
+        if not line.startswith('#'):
+            break
+        key, separator, value = line[1:].partition(':')
+        if separator and key.strip() == 'schema':
+            schemas.append(value.strip())
+    return schemas[0] if len(schemas) == 1 else None
+
+
 def source_rows(content):
     """Return schema declaration and complete CSV row strings, preserving bytes."""
     text = content.decode('utf-8')
     lines = io.StringIO(text, newline='').readlines()
-    if not lines or not lines[0].startswith('# MERMAID GeoCSV schema:'):
+    schema = _schema_declaration(content)
+    if schema is None:
         raise ValueError('comparison source lacks a schema declaration')
-    schema = lines[0].rstrip('\r\n')
     start = 0
     while start < len(lines) and lines[start].startswith('#'):
         start += 1
@@ -44,10 +59,9 @@ def _without_producer_revision(row):
 def data_diff(previous, current):
     """Return exact -/+ source-index rows, plus schema/change classifications."""
     if previous is not None and current is not None:
-        old_first = previous.split(b'\n', 1)[0].rstrip(b'\r')
-        new_first = current.split(b'\n', 1)[0].rstrip(b'\r')
-        if (not old_first.startswith(b'# MERMAID GeoCSV schema:')
-                or not new_first.startswith(b'# MERMAID GeoCSV schema:') or old_first != new_first):
+        old_schema = _schema_declaration(previous)
+        new_schema = _schema_declaration(current)
+        if old_schema is None or new_schema is None or old_schema != new_schema:
             return b'simple diff cannot be made: MERMAID GeoCSV schemas differ\n', True, False
     current_schema, current_rows = source_rows(current) if current is not None else (None, [])
     previous_schema, previous_rows = source_rows(previous) if previous is not None else (None, [])

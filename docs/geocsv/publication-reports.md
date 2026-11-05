@@ -1,6 +1,6 @@
 # Publication evidence and snapshot changes
 
-Publisher 0.6.0 requires consumer >= 0.28.0 and validation report schema 5.
+Publisher 0.6.0 requires consumer >= 0.29.0 and validation report schema 5.
 Payload schema remains 1.0.0. Historical evidence is immutable; these changes
 require a fresh candidate/report and do not authorize uploads or production.
 
@@ -41,7 +41,7 @@ validation report retains each producer report's full content and checksum;
 local archive recording retains its exact bytes. Missing or stale evidence fails.
 
 Scientific estimation and its validation belong to the automaid version in the
-GeoCSV attribution header and scientific publication. Measurement rows supply
+GeoCSV producer header and scientific publication. Measurement rows supply
 observations; derived times/locations are best estimates supplied in the hope
 that they are useful. Researchers may reinterpolate measurements. Consumer SAC
 station-depth projection remains WaterPressure/100 metres, with source mbar.

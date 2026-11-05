@@ -54,7 +54,7 @@ class Diffs(unittest.TestCase):
     def test_multiline_row_and_schema_mismatch(self):
         before = (HEADER + 'a,"b\nc"\n').encode()
         self.assertEqual(len(source_rows(before)[1]), 1)
-        diff, schema, changed = data_diff(before, before.replace(b'schema: 1.0.0', b'schema: 2.0.0'))
+        diff, schema, changed = data_diff(before, before.replace(b'schema: MERMAID GeoCSV v1.0.0-rc1', b'schema: 2.0.0'))
         self.assertTrue(schema)
         self.assertIn(b'simple diff cannot be made', diff)
         self.assertFalse(changed)
@@ -90,7 +90,7 @@ class Diffs(unittest.TestCase):
             self.assertIn(b'geocsv_line_number,mseed_filename(s)\n11,a.mseed,b.mseed\n', files['P0006.mapping.csv'])
             self.assertEqual(json.loads(files['comparison.json'])['previous_release_id'], previous_id)
             # Schema mismatch is separately opt-in.
-            objects['P0006.geocsv'] = previous.replace(b'schema: 1.0.0', b'schema: 2.0.0')
+            objects['P0006.geocsv'] = previous.replace(b'schema: MERMAID GeoCSV v1.0.0-rc1', b'schema: 2.0.0')
             objects['manifest.json'] = json_bytes(manifest(previous_id, objects['P0006.geocsv']))
             with self.assertRaisesRegex(FileExistsError, 'conflicting immutable'):
                 publication_reports(candidate, report, Store(), 'geocsv/testing', previous_id,

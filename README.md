@@ -19,7 +19,7 @@ python -B -m unittest discover -s tests -v
 ```
 
 Activate `.venv` in each new shell session before running publisher commands.
-Python >= 3.11 and mermaid-geocsv >= 0.28.0 are required. Python 3.12 is
+Python >= 3.11 and mermaid-geocsv >= 0.29.0 are required. Python 3.12 is
 the documented full-suite setup. Only MERMAID payload
 schema 1.0.0 is supported. Repository version authority is `version`;
 validation reports use schema 5. Reports bind the exact installed software

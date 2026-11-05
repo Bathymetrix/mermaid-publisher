@@ -81,8 +81,8 @@ class Snapshots(unittest.TestCase):
         for value in ("2026-02-30T00:00:00Z", "2026-10-21T24:00:00Z", "2026-10-21T22:48:60Z", "test-001", "2026-10-21T22:48:33+00:00"):
             with self.subTest(value=value), self.assertRaises(ValueError):
                 release_component(value)
-        for content in (geocsv().replace(f"#created: {RELEASE}\n".encode(), b""),
-                        geocsv(note=f"#created: {RELEASE}\n")):
+        for content in (geocsv().replace(f"# created: {RELEASE}\n".encode(), b""),
+                        geocsv(note=f"# created: {RELEASE}\n")):
             self.file.write_bytes(content)
             with self.assertRaisesRegex(ValueError, "exactly one"):
                 self.create()
@@ -92,10 +92,10 @@ class Snapshots(unittest.TestCase):
             self.create()
 
     def test_creation_requires_schema_1_declaration_including_recordless_sources(self):
-        schema = b"# MERMAID GeoCSV schema: 1.0.0\n"
+        schema = b"# schema: MERMAID GeoCSV v1.0.0-rc1\n"
         for content in (geocsv(), HEADER.encode()):
             for invalid in (content.replace(schema, b""),
-                            content.replace(schema, b"# MERMAID GeoCSV schema: 0.9.0\n"),
+                            content.replace(schema, b"# schema: MERMAID GeoCSV v0.9.0\n"),
                             content.replace(schema, schema + schema),
                             b"#description: misplaced schema\n" + content):
                 with self.subTest(content=invalid), self.assertRaisesRegex(ValueError, "schema"):
@@ -111,15 +111,29 @@ class Snapshots(unittest.TestCase):
             self.file.write_bytes(geocsv(created=value))
             with self.subTest(value=value), self.assertRaisesRegex(ValueError, "six-digit"):
                 self.create()
-        for declaration in (b"#created:  ", b"#created:", b"# created: "):
-            self.file.write_bytes(geocsv().replace(b"#created: ", declaration))
-            with self.subTest(declaration=declaration), self.assertRaisesRegex(ValueError, "literal #created"):
+        for declaration in (b"#created :  ", b"# created:", b"#\tcreated \t: "):
+            self.file.write_bytes(geocsv().replace(b"# created: ", declaration))
+            with self.subTest(declaration=declaration):
+                from inspect_snapshot import inspect_source_geocsv
+                self.assertEqual(inspect_source_geocsv(self.file, "P0006"), (RELEASE, 1))
+
+    def test_supported_schema_family_and_metadata_padding(self):
+        for version in ('1.0.0', '1.0.0-rc1', '1.0.0-rc2', '1.0.0+build.1'):
+            self.file.write_bytes(geocsv().replace(b'MERMAID GeoCSV v1.0.0-rc1',
+                                                  f'MERMAID GeoCSV v{version}'.encode()))
+            with self.subTest(version=version):
+                from inspect_snapshot import inspect_source_geocsv
+                self.assertEqual(inspect_source_geocsv(self.file, 'P0006'), (RELEASE, 1))
+        for version in ('1.0.01', '1.0.1', '1.0.0evil', '1.0.0-'):
+            self.file.write_bytes(geocsv().replace(b'MERMAID GeoCSV v1.0.0-rc1',
+                                                  f'MERMAID GeoCSV v{version}'.encode()))
+            with self.subTest(version=version), self.assertRaisesRegex(ValueError, 'schema'):
                 self.create()
 
     def test_candidate_schema_rechecked_even_with_matching_hash(self):
         candidate = self.create()
         payload = candidate / "P0006.geocsv"
-        payload.write_bytes(payload.read_bytes().replace(b"schema: 1.0.0", b"schema: 0.9.0"))
+        payload.write_bytes(payload.read_bytes().replace(b"schema: MERMAID GeoCSV v1.0.0-rc1", b"schema: MERMAID GeoCSV v0.9.0"))
         manifest = json.loads((candidate / "manifest.json").read_bytes())
         size, checksum = fingerprint(payload)
         manifest["files"][0].update(size_bytes=size, sha256=checksum)
@@ -292,7 +306,7 @@ class Publication(unittest.TestCase):
         self.store = MemoryStore()
         manifest_bytes = (self.candidate / "manifest.json").read_bytes()
         result = SimpleNamespace(provenance=SimpleNamespace(instrument_id="P0006", manifest=manifest_bytes))
-        self.client = SimpleNamespace(geocsv=SimpleNamespace(__version__="0.28.0", fetch=lambda **kwargs: [result]))
+        self.client = SimpleNamespace(geocsv=SimpleNamespace(__version__="0.29.0", fetch=lambda **kwargs: [result]))
         self.patches = [patch.object(publisher, "verify_https"),
                         patch.dict(sys.modules, {"mermaid": self.client})]
         self.https = self.patches[0].start()
@@ -311,7 +325,7 @@ class Publication(unittest.TestCase):
 
     def test_old_fetch_consumer_stops_before_remote_writes(self):
         self.client.geocsv.__version__ = "0.24.0"
-        with self.assertRaisesRegex(ValueError, ">= 0.28.0"):
+        with self.assertRaisesRegex(ValueError, ">= 0.29.0"):
             self.transfer()
         self.assertEqual(self.store.writes, [])
 

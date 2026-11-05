@@ -90,8 +90,8 @@ def validate_snapshot(candidate, source_root, report_path, *, batch_size=128, pr
         raise RuntimeError("full-archive validation requires Python 3.11+")
     from mermaid import geocsv
     from obspy import Stream, read as read_waveforms
-    if tuple(int(part) for part in geocsv.__version__.split('.')) < (0, 28, 0):
-        raise RuntimeError("schema 1.0.0 validation requires mermaid-geocsv >= 0.28.0")
+    if tuple(int(part) for part in geocsv.__version__.split('.')) < (0, 29, 0):
+        raise RuntimeError("schema 1.0.0 validation requires mermaid-geocsv >= 0.29.0")
 
     if type(batch_size) is not int or batch_size < 1:
         raise ValueError("batch_size must be a positive integer")

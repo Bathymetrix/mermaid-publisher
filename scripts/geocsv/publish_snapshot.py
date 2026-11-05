@@ -158,8 +158,8 @@ def verify_https(url, expected):
 def require_fetch_consumer():
     """Reject the historical download protocol before any object writes."""
     from mermaid import geocsv
-    if tuple(int(part) for part in geocsv.__version__.split(".")) < (0, 28, 0):
-        raise ValueError("schema 1.0.0 publication requires mermaid-geocsv >= 0.28.0")
+    if tuple(int(part) for part in geocsv.__version__.split(".")) < (0, 29, 0):
+        raise ValueError("schema 1.0.0 publication requires mermaid-geocsv >= 0.29.0")
 
 
 def _transfer_and_verify(candidate, report, store, base_url, *, object_prefix, accepted=None, report_fingerprint=None, before_activation=None, allow_metadata_changes=False, allow_schema_change=False):

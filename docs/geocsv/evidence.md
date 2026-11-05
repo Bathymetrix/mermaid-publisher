@@ -5,6 +5,10 @@ They are not current operating instructions and do not accept different bytes
 or software. Use [the workflow](workflow.md), [contract](contract.md) and
 [validation reference](validation.md) for current requirements.
 
+## Local rc1 testing
+
+- [PPHC rc1 candidate validation](pphc-rc1-validation.md): new header, source preservation and 3,288 pairs; not published
+
 ## Schema 1.0.0
 
 - [Current hosted P0006/P0045 snapshot](testing-publication-20261103.md): automaid v4.9.2 measurement restoration, schema-5 acceptance, bundle/reports, receipt and scoped archive commit.
