@@ -1,8 +1,9 @@
 # Publication evidence and snapshot changes
 
-Publisher 0.6.0 requires consumer >= 0.29.0 and validation report schema 5.
-Payload schema remains 1.0.0. Historical evidence is immutable; these changes
-require a fresh candidate/report and do not authorize uploads or production.
+Publisher >= 0.8.0 requires consumer >= 0.29.0 and validation report schema 5
+for dataset-first payloads in the MERMAID 1.0.0 schema family. Historical evidence
+is immutable. Every candidate requires matching fresh acceptance; acceptance
+does not authorize uploads or production.
 
 ## Recording coverage and names
 

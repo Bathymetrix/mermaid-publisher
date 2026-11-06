@@ -35,10 +35,11 @@ storage and round trips. See the
 
 ## Sources and archive
 
-Only MERMAID GeoCSV schema 1.0.0 is accepted. Creation and candidate inspection
-require its exact first-line declaration and literal six-digit UTC `#created`
-declaration, including recordless sources. Duplicate schema declarations and
-comments after the column header raise; quoted multiline values remain data.
+Creation and candidate inspection require first-line `# dataset: GeoCSV 2.0`,
+one supported MERMAID 1.0.0-family `schema` declaration and a literal six-digit
+UTC `created` declaration, including recordless sources. Duplicate schema
+declarations and comments after the column header raise; quoted multiline
+values remain data.
 Creation performs an identity preflight, not full payload validation: the
 consumer's parser and exhaustive scientific checks must pass before publication.
 
@@ -126,7 +127,7 @@ existing archive's attributes or configuration.
 .venv/bin/python scripts/geocsv/create_snapshot.py \
   --source-root "$MERMAID/processed" \
   --workspace "$MERMAID/publisher/geocsv" \
-  --instruments P0006 P0045
+  --previous-manifest /path/to/verified-previous-manifest.json
 ```
 
 These examples use `instruments.csv` in `$MERMAID_PUBLISHER_GEOCSV_CONFIG`.
@@ -140,10 +141,10 @@ are excluded and inventoried. Supply `--previous-manifest` after first publicati
 to detect unexpectedly missing instruments. Pause upstream processing first.
 
 Create, validate and publish use the same frozen manifest. Publishing has no
-instrument-selection switch. The P0006/P0045 publication candidate needs its own
-fresh report even after a separate full-corpus check passes. The archive retains
-only that candidate's payloads and evidence. Unselected payloads and original
-waveform archives are not copied into it.
+instrument-selection switch. Omit `--instruments` at creation for the complete
+corpus; use an explicit selection only for an authorized subset. Every frozen
+inventory needs its own matching report. The archive retains that candidate's
+payloads and evidence; original waveform archives are not copied into it.
 
 Within one local or hosted collection, a timestamp identifies exactly one
 immutable inventory. Changing selection under an existing timestamp raises;
@@ -153,8 +154,8 @@ hosted inventory requires a new upstream timestamp, not an edited manifest.
 Using the candidate ID printed by creation, set a task-specific shell variable:
 
 ```bash
-GEOCSV_CANDIDATE="$MERMAID/publisher/geocsv/testing/snapshots/2026-11-03T22-29-17.981000Z"
-GEOCSV_REPORT="$MERMAID/publisher/geocsv/testing/validation/2026-11-03T22-29-17.981000Z/validation-new-attempt.json"
+GEOCSV_CANDIDATE="$MERMAID/publisher/geocsv/testing/snapshots/2026-11-05T23-41-47.235000Z"
+GEOCSV_REPORT="$MERMAID/publisher/geocsv/testing/validation/2026-11-05T23-41-47.235000Z/validation-new-attempt.json"
 .venv/bin/python scripts/geocsv/validate_snapshot.py \
   --candidate "$GEOCSV_CANDIDATE" --source-root "$MERMAID/processed" \
   --report "$GEOCSV_REPORT"
@@ -184,7 +185,7 @@ from any alternative endpoint; changing a hostname alone does not establish that
 
 An existing published candidate can be revalidated locally without recreating
 it or changing its hosted evidence. Inspect the actual consumer revision and
-public imports, verify schema 1.0.0 support and the freshly installed consumer
+public imports, verify dataset-first 1.0.0-family support and the freshly installed consumer
 before running validation. Retain previous reports unchanged: the acceptance
 gate rejects reports whose software fingerprints differ from the current
 installation, even when the package version is unchanged.

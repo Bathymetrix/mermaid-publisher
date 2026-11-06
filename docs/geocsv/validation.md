@@ -2,8 +2,8 @@
 
 `mermaid-publisher/scripts/geocsv/validate_snapshot.py` orchestrates the public
 `mermaid-geocsv` read → associate(create_sac_header=True) APIs, followed by
-publisher-only export checks and ObsPy writing. Consumer >= 0.29.0 and payload
-schema 1.0.0 are required; historical exporter paths are unsupported. Validation requires Python 3.11+,
+publisher-only export checks and ObsPy writing. Consumer >= 0.29.0 and
+dataset-first MERMAID 1.0.0-family payloads are required. Validation requires Python 3.11+,
 `mermaid-geocsv` with its ObsPy extra, and original local MiniSEED/SAC inputs.
 The source tree is read-only. Temporary exports, frozen products and reports
 may use an ordinary temporary workspace, separate from the source tree and

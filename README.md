@@ -20,8 +20,8 @@ python -B -m unittest discover -s tests -v
 
 Activate `.venv` in each new shell session before running publisher commands.
 Python >= 3.11 and mermaid-geocsv >= 0.29.0 are required. Python 3.12 is
-the documented full-suite setup. Only MERMAID payload
-schema 1.0.0 is supported. Repository version authority is `version`;
+the documented full-suite setup. Only dataset-first payloads in the MERMAID
+1.0.0 schema family are supported. Repository version authority is `version`;
 validation reports use schema 5. Reports bind the exact installed software
 and code hashes, not just version numbers.
 
@@ -66,8 +66,8 @@ files. The bundle is served beside them, outside `manifest.files`; individual
 hashes and the scientific report are unchanged. Archive pages use a plain
 clickable directory tree, with a page for each release directory.
 
-All hosted data are **testing only**. The approved hosted scope is P0006/P0045;
-full-corpus licensing remains unresolved. Scientific acceptance does not
+All hosted data are **testing only**. The current full-corpus rc1 snapshot is approved for testing;
+production scope and licensing remain unresolved. Scientific acceptance does not
 authorize uploads, deployment, retirement or production activation. Publication
 requires an isolated HTTPS testing destination, licensing/citation approval and
 explicit upload authorization. Private settings and credentials remain outside
@@ -75,6 +75,7 @@ checkouts; the SDK resolves credentials.
 
 ## Documentation
 
+- [Full-corpus rc1 testing publication](docs/geocsv/full-corpus-rc1-publication.md)
 - [Create, validate, publish and recover](docs/geocsv/workflow.md)
 - [Publication/download contract](docs/geocsv/contract.md)
 - [Scientific comparisons and report schema](docs/geocsv/validation.md)

@@ -28,8 +28,8 @@ software revision cannot accept this candidate.
 Require `testing_only: true` in both manifest and latest, collection URLs ending
 in `/testing/` and object prefixes ending in `/testing`. Production activation
 is rejected by publisher commands. Testing and production pointers remain
-separate. The approved hosted scope is P0006/P0045; broader distribution needs
-licensing and scope decisions. See [hosting status](../../../bathymetrix-site/docs/geocsv-hosting.md)
+separate. The full-corpus snapshot `2026-11-05T23:41:47.235000Z` is approved for rc1 testing.
+Production scope, licensing and formal release remain separate decisions. See [hosting status](../../../bathymetrix-site/docs/geocsv-hosting.md)
 and the [artifact evidence index](evidence.md).
 
 Scientific acceptance, infrastructure availability and testing publication do
@@ -70,7 +70,7 @@ immutable writes/latest activation are destination requirements.
 
 ## Literal release identity and paths
 
-Scientific `release_id` is the exact GeoCSV `#created` value, with grammar
+Scientific `release_id` is the exact GeoCSV `created` value, with grammar
 `YYYY-MM-DDTHH:MM:SS[.digits]Z`, a valid calendar date, hours 00–23 and seconds
 00–59. There must be exactly one declaration per file and exact spelling agreement
 across the complete snapshot. Missing, repeated or mixed declarations raise.
@@ -78,7 +78,7 @@ Preserve all fractional digits; do not round or reformat the identity.
 
 Compute `release_component = release_id.replace(":", "-")` only for the
 validated creation-timestamp release ID. This is a path representation, not a
-replacement timestamp format. Do not rewrite GeoCSV contents, `#created`,
+replacement timestamp format. Do not rewrite GeoCSV contents, `created`,
 JSON release IDs, provenance or any other dates/times:
 
 | Context | Example |
@@ -299,7 +299,8 @@ for the describing paper and omitted until its DOI exists. Final schema 1.0.0
 is reserved for paper publication. Testing accepts the 1.0.0 version family,
 retains the exact revision and applies all scientific requirements.
 
-This header requires consumer >= 0.29.0 and publisher >= 0.8.0. Existing hosted
-snapshots retain their original old header; fetch can retrieve their exact bytes,
-but the dataset-first reader rejects them. No upload, activation or retirement
-is implied by local candidate validation. Canonical sources remain read-only.
+This header requires consumer >= 0.29.0 and publisher >= 0.8.0. Testing latest
+serves the full-corpus rc1 snapshot `2026-11-05T23:41:47.235000Z`. Older retained
+snapshots keep their original headers and may be incompatible with this reader.
+Canonical sources remain read-only. Testing publication does not authorize
+production activation or retirement.
