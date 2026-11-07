@@ -75,6 +75,7 @@ checkouts; the SDK resolves credentials.
 
 ## Documentation
 
+- [Publisher release audit and linked consumer checklist](docs/geocsv/release-audit-2026-11-06.md)
 - [Full-corpus rc1 testing publication](docs/geocsv/full-corpus-rc1-publication.md)
 - [Create, validate, publish and recover](docs/geocsv/workflow.md)
 - [Publication/download contract](docs/geocsv/contract.md)
