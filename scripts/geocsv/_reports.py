@@ -8,7 +8,7 @@ import json
 from pathlib import Path
 import re
 
-from inspect_snapshot import check_manifest, fingerprint, json_bytes, read_json, release_component
+from inspect_snapshot import PAYLOAD_SCHEMA, check_manifest, fingerprint, json_bytes, read_json, release_component
 
 
 def _schema_declaration(content):
@@ -27,12 +27,11 @@ def _schema_declaration(content):
 
 
 def source_rows(content):
-    """Return schema declaration and complete CSV row strings, preserving bytes."""
+    """Return complete CSV row strings, preserving bytes."""
     text = content.decode('utf-8')
     lines = io.StringIO(text, newline='').readlines()
-    schema = _schema_declaration(content)
-    if schema is None:
-        raise ValueError('comparison source lacks a schema declaration')
+    if _schema_declaration(content) != PAYLOAD_SCHEMA:
+        raise ValueError(f'comparison source requires {PAYLOAD_SCHEMA}')
     start = 0
     while start < len(lines) and lines[start].startswith('#'):
         start += 1
@@ -43,47 +42,27 @@ def source_rows(content):
     for _ in reader:
         rows.append(''.join(lines[start + previous:start + reader.line_num]))
         previous = reader.line_num
-    return schema, rows
-
-
-def _without_producer_revision(row):
-    """Ignore only the automaid revision; preserve all other row bytes."""
-    match = re.match(
-        r'^("?)(?:Derivation:Recording|Interpolation:Crossing-(?:Ascent|Descent))'
-        r':automaid-(?P<version>v[0-9][0-9A-Za-z.+_-]*)\1,', row)
-    if match is None:
-        return row
-    return row[:match.start('version')], row[match.end('version'):]
+    return rows
 
 
 def data_diff(previous, current):
-    """Return exact -/+ source-index rows, plus schema/change classifications."""
-    if previous is not None and current is not None:
-        old_schema = _schema_declaration(previous)
-        new_schema = _schema_declaration(current)
-        if old_schema is None or new_schema is None or old_schema != new_schema:
-            return b'simple diff cannot be made: MERMAID GeoCSV schemas differ\n', True, False
-    current_schema, current_rows = source_rows(current) if current is not None else (None, [])
-    previous_schema, previous_rows = source_rows(previous) if previous is not None else (None, [])
+    """Return exact -/+ source-index rows and whether previous rows changed."""
+    previous_rows = source_rows(previous) if previous is not None else []
+    current_rows = source_rows(current) if current is not None else []
     output = []
+    changed = False
     for tag, first, stop, new_first, new_stop in SequenceMatcher(
             None, previous_rows, current_rows, autojunk=False).get_opcodes():
         if tag in ('replace', 'delete'):
+            changed = True
             output.extend(f'-{index},{previous_rows[index]}' for index in range(first, stop))
         if tag in ('replace', 'insert'):
             output.extend(f'+{index},{current_rows[index]}' for index in range(new_first, new_stop))
-    # The audit diff stays exact. Producer revision alone does not change the
-    # scientific row, but edits, deletions and reordering still require review.
-    changed = any(tag in ('replace', 'delete') for tag, *_ in SequenceMatcher(
-        None, [_without_producer_revision(row) for row in previous_rows],
-        [_without_producer_revision(row) for row in current_rows],
-        autojunk=False).get_opcodes())
-    return ''.join(output).encode('utf-8'), False, changed
+    return ''.join(output).encode('utf-8'), changed
 
 
 def publication_reports(candidate, report, store, object_prefix, previous_id, *,
-                        already_selected=False, allow_metadata_changes=False,
-                        allow_schema_change=False):
+                        already_selected=False, allow_metadata_changes=False):
     """Freeze reports against the previous pointer observed before activation."""
     candidate = Path(candidate)
     manifest = read_json(candidate / 'manifest.json')
@@ -121,11 +100,10 @@ def publication_reports(candidate, report, store, object_prefix, previous_id, *,
     payloads = {entry['instrument_id']: (candidate / entry['filename']).read_bytes()
                 for entry in manifest['files']}
     outputs = {}
-    schema_changed = removed = False
+    removed = False
     for instrument in sorted(baseline.keys() | payloads.keys()):
-        content, changed_schema, changed_rows = data_diff(baseline.get(instrument), payloads.get(instrument))
+        content, changed_rows = data_diff(baseline.get(instrument), payloads.get(instrument))
         outputs[f'{instrument}.diff'] = content
-        schema_changed |= changed_schema
         removed |= changed_rows
     evidence = read_json(report)
     for instrument in evidence.get('instruments', []):
@@ -145,8 +123,6 @@ def publication_reports(candidate, report, store, object_prefix, previous_id, *,
         else:
             with path.open('xb') as stream:
                 stream.write(content)
-    if schema_changed and not allow_schema_change:
-        raise ValueError(f'simple diff cannot be made: schemas differ; use --allow-schema-change explicitly; review {directory}')
     if removed and not allow_metadata_changes:
         raise ValueError(f'previous data rows changed or were deleted; use --allow-metadata-changes explicitly; review {directory}')
     comparison = {'schema_version': 1, 'release_id': manifest['release_id'],
@@ -155,7 +131,6 @@ def publication_reports(candidate, report, store, object_prefix, previous_id, *,
                   'previous_release_id': previous_id,
                   'previous_manifest_sha256': previous_manifest_hash,
                   'allow_metadata_changes': allow_metadata_changes,
-                  'allow_schema_change': allow_schema_change,
                   'files': {name: hashlib.sha256(content).hexdigest() for name, content in outputs.items()}}
     comparison_bytes = json_bytes(comparison)
     if {path.name for path in directory.iterdir()} - (outputs.keys() | {'comparison.json'}):

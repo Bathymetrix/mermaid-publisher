@@ -5,16 +5,21 @@ from pathlib import Path
 from inspect_snapshot import fingerprint, read_json
 
 
+def waveform_rows(table):
+    return table.loc[table['type'].eq('waveform')]
+
+
 def check_gps_bounds(tables):
     """Require GPS measurements to bracket every row, with inclusive bounds."""
     for table in tables:
         if table.empty:
             continue
-        gps = table.loc[table.MethodIdentifier.str.startswith('Measurement:Position:')]
-        if gps.empty:
+        gps_times = table.loc[table['type'].eq('gps'), 'measured_time']
+        times = table.measured_time.fillna(table.derived_time)
+        if gps_times.empty:
             raise ValueError('nonempty GeoCSV requires GPS measurements for time bounds')
-        first, last = gps.Time.min(), gps.Time.max()
-        outside = table.loc[(table.Time < first) | (table.Time > last)]
+        first, last = gps_times.min(), gps_times.max()
+        outside = table.loc[(times < first) | (times > last)]
         if not outside.empty:
             lines = table.attrs['geocsv'].line_numbers
             indices = list(outside.index)
@@ -32,7 +37,7 @@ def recording_evidence(candidate, entry, tables, pairs):
     rows = {}
     for dataset_index, table in enumerate(tables):
         metadata = table.attrs['geocsv']
-        recordings = table.loc[table.MethodIdentifier.str.startswith('Derivation:Recording:')]
+        recordings = waveform_rows(table)
         for index in recordings.index:
             rows[(dataset_index, int(index))] = {
                 'source_index': int(index), 'source_line': metadata.line_numbers[index],

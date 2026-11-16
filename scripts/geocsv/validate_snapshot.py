@@ -8,7 +8,7 @@ from pathlib import Path
 import sys
 import tempfile
 
-from _evidence import recording_evidence
+from _evidence import recording_evidence, waveform_rows
 from _verify_sac import write_verified_sac
 
 from gate_snapshot import (
@@ -24,7 +24,8 @@ def compare_pair(trace, reference_path, output_path):
     from obspy.io.sac import SACTrace
 
     checks = dict.fromkeys(CHECKS, False)
-    checks["strict_association"] = trace.stats.geocsv.association.type == "single_segment"
+    source = trace.stats.geocsv
+    checks["strict_association"] = source.association.type == "single_segment"
     write_verified_sac(trace, output_path)
     actual = SACTrace.read(str(output_path))
     # Read the independent SAC only AFTER association/export; never supply it upstream.
@@ -46,7 +47,7 @@ def compare_pair(trace, reference_path, output_path):
     checks["sample_interval"] = native_interval_error == 0 and interval_ulps is not None and interval_ulps <= LIMITS["interval_reference_max_ulps"]
     measurements = {
         "association_offset_seconds": abs(float(trace.stats.geocsv.association.waveform_start_offset_seconds)),
-        "association_rate_error_hz": abs(float(trace.stats.geocsv.SampleRate) - trace.stats.sampling_rate),
+        "association_rate_error_hz": abs(float(source["sample_rate"]) - trace.stats.sampling_rate),
         "start_native_ns": abs(written_trace.stats.starttime.ns - trace.stats.starttime.ns),
         "start_reference_ns": abs(written_trace.stats.starttime.ns - reference_trace.stats.starttime.ns),
         "interval_error_seconds": max(abs(actual.delta - float(np.float32(trace.stats.delta))), abs(actual.delta - reference.delta)),
@@ -74,9 +75,7 @@ def compare_pair(trace, reference_path, output_path):
             checks[field] = error <= tolerance
     checks["depth"] = actual.stdp == reference.stdp
     measurements["depth_error_m"] = abs(actual.stdp - reference.stdp) if actual.stdp is not None and reference.stdp is not None else None
-    checks["elevation"] = actual.stel == reference.stel == LIMITS["elevation_metres"]
-    measurements["elevation_error_m"] = max(abs(actual.stel), abs(reference.stel)) if actual.stel is not None and reference.stel is not None else None
-    source = trace.stats.geocsv
+    checks["elevation"] = actual.stel is None and reference.stel == LIMITS["elevation_metres"]
     association = {"type": source.association.type, "dataset_index": int(source.dataset_index),
                    "source_index": int(source.source_index), "source_line": int(source.source_line)}
     checks = {key: bool(value) for key, value in checks.items()}
@@ -90,8 +89,8 @@ def validate_snapshot(candidate, source_root, report_path, *, batch_size=128, pr
         raise RuntimeError("full-archive validation requires Python 3.11+")
     from mermaid import geocsv
     from obspy import Stream, read as read_waveforms
-    if tuple(int(part) for part in geocsv.__version__.split('.')) < (0, 29, 0):
-        raise RuntimeError("schema 1.0.0 validation requires mermaid-geocsv >= 0.29.0")
+    if tuple(int(part) for part in geocsv.__version__.split('.')) < (0, 30, 0):
+        raise RuntimeError("snapshot validation requires mermaid-geocsv >= 0.30.0")
 
     if type(batch_size) is not int or batch_size < 1:
         raise ValueError("batch_size must be a positive integer")
@@ -150,7 +149,7 @@ def validate_snapshot(candidate, source_root, report_path, *, batch_size=128, pr
                 progress(f"{instrument}: {len(selected)} original waveform pairs")
             try:
                 tables = geocsv.read(candidate / entry["filename"])
-                item["recording_rows"] = sum(int(table["MethodIdentifier"].str.startswith("Derivation:Recording:", na=False).sum()) for table in tables)
+                item["recording_rows"] = sum(len(waveform_rows(table)) for table in tables)
             except Exception as exc:
                 fail(instrument, None, "read_geocsv", exc)
                 item["status"] = "failed"

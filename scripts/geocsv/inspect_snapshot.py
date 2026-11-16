@@ -52,8 +52,11 @@ def fingerprint(path):
     return size, checksum.hexdigest()
 
 
+PAYLOAD_SCHEMA = "MERMAID GeoCSV v1.0.0-rc2"
+
+
 def inspect_source_geocsv(path, instrument_id):
-    """Require schema 1.0.0 identity; leave full parsing to the consumer validator."""
+    """Require rc2 identity; leave full parsing to the consumer validator."""
     created = []
     schema_seen = False
     station_index = None
@@ -76,8 +79,8 @@ def inspect_source_geocsv(path, instrument_id):
                 if key == "schema":
                     if schema_seen:
                         raise ValueError(f"{path}: duplicate schema declaration")
-                    if not re.fullmatch(r"MERMAID GeoCSV v1\.0\.0(?:-[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?", value):
-                        raise ValueError(f"{path}: unsupported schema; requires MERMAID GeoCSV v1.0.0 family")
+                    if value != PAYLOAD_SCHEMA:
+                        raise ValueError(f"{path}: unsupported schema; requires {PAYLOAD_SCHEMA}")
                     schema_seen = True
                 if key == "created":
                     if not re.fullmatch(r"[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\.[0-9]{6}Z", value):
@@ -90,13 +93,13 @@ def inspect_source_geocsv(path, instrument_id):
             # csv.reader consumes any continuation lines in a quoted record.
             row = next(csv.reader(itertools.chain([line], lines), strict=True))
             if station_index is None:
-                if row.count("Station") != 1:
-                    raise ValueError(f"{path}: requires one Station column")
+                if row.count("station") != 1:
+                    raise ValueError(f"{path}: requires one station column")
                 width = len(row)
-                station_index = row.index("Station")
+                station_index = row.index("station")
             else:
                 if len(row) != width or row[station_index] != instrument_id:
-                    raise ValueError(f"{path}: ambiguous/mismatched Station; expected {instrument_id}")
+                    raise ValueError(f"{path}: ambiguous/mismatched station; expected {instrument_id}")
                 count += 1
     if not schema_seen:
         raise ValueError(f"{path}: missing schema declaration")

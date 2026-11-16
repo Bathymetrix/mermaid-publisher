@@ -1,4 +1,0 @@
-#dataset: GeoCSV
-#field_type: string,float
-Station,Latitude
-P0006,-14.4

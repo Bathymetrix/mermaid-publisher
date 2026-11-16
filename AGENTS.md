@@ -9,18 +9,16 @@ implemented data type. Keep its code, tests and documentation under their
 `geocsv/` directories. Add shared infrastructure only after another implemented
 workflow demonstrates the need.
 
-Use public consumer APIs with mermaid-geocsv >= 0.29.0 and the dataset-first payload schema
-1.0.0 family. Association creates optional SAC station headers; ObsPy writes them.
+Use public consumer APIs with mermaid-geocsv >= 0.30.0 and the dataset-first payload schema
+1.0.0-rc2. Association creates optional SAC station headers; ObsPy writes them.
 The publisher owns final-waveform/export checks in `_verify_sac.py` and
-validation report schema 5. Scientific behavior and package defects belong in
+validation report schema 6. Scientific behavior and package defects belong in
 the consumer. Do not duplicate matching/projection logic or widen tolerances.
 
 `docs/geocsv/contract.md` is the canonical publication/download agreement.
 Payload semantics are in `../mermaid-geocsv/docs/format-spec.md`; producer
 rules are in `../automaid/docs/geocsv.md`. Keep frozen manifests, reports,
-receipts, baseline fingerprints and original fixture bytes unchanged. They
-are artifact-bound evidence, not active requirements to support older schemas
-or consumers. Repository version authority is `version`; schema versions are
+receipts, baseline fingerprints and original fixture bytes unchanged. They are artifact-bound evidence. Repository version authority is `version`; schema versions are
 independent and imply no tag, release or publication authorization.
 
 Keep relevant documentation in `../mermaid-geocsv` and `../bathymetrix-site`

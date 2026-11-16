@@ -11,7 +11,7 @@ import unittest
 from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts/geocsv"))
-from gate_snapshot import AcceptanceError, LIMITS, require_acceptance
+from gate_snapshot import AcceptanceError, LIMITS, measured_maxima, require_acceptance
 from create_snapshot import create_snapshot as _create_snapshot
 from inspect_snapshot import json_bytes
 from validate_snapshot import validate_snapshot
@@ -61,9 +61,9 @@ class ArchiveValidation(unittest.TestCase):
         reference.write(str(self.sac))
         self.geo = self.serial / "geo_DET_REQ.csv"
         self.geo.write_text(HEADER +
-            "Derivation:Recording:automaid-v0,2020-01-01T00:00:00.000000Z,MH,P0006,00,BDH,Q,12.345678,-150.123456,0,10000,MERMAID_test,20,4,,0\n" +
-            "Measurement:Position:synthetic,2019-12-31T00:00:00.000000Z,MH,P0006,,,,12,-150,,,MERMAID_test,,,,\n" +
-            "Measurement:Position:synthetic,2020-01-02T00:00:00.000000Z,MH,P0006,,,,12,-150,,,MERMAID_test,,,,\n")
+            "waveform,,2020-01-01T00:00:00.000000Z,MH,P0006,00,BDH,Q,,,12.345678,-150.123456,10000,,20,4,,0\n" +
+            "gps,2019-12-31T00:00:00.000000Z,,MH,P0006,,,,12,-150,,,,,,,,\n" +
+            "gps,2020-01-02T00:00:00.000000Z,,MH,P0006,,,,12,-150,,,,,,,,\n")
         self.inventory = self.root / "instruments.csv"
         self.inventory.write_text("instrument_serial,instrument_id\nserial,P0006\n")
         self.work = self.root / "publication"
@@ -86,6 +86,20 @@ class ArchiveValidation(unittest.TestCase):
             self.assertEqual(path.read_bytes(), content)
         self.assertFalse(list(self.report_path.parent.glob("sac-exports-*")))
         self.assertNotIn(str(self.root), self.report_path.read_text())
+
+    def test_rc2_snapshot_validates_source_times_and_undefined_export_elevation(self):
+        report = self.validate()
+        self.assertEqual(report["status"], "passed", report["failures"])
+        self.assertEqual(report["instruments"][0]["coverage"][0]["source_index"], 0)
+        self.assertTrue(report["pairs"][0]["checks"]["elevation"])
+        self.assertNotIn("elevation_error_m", report["pairs"][0]["measurements"])
+        self.assertEqual(require_acceptance(self.candidate, self.report_path, self.source), report)
+
+        report["pairs"][0]["measurements"]["elevation_error_m"] = 0
+        report["maxima"] = measured_maxima(report["pairs"])
+        self.report_path.write_bytes(json_bytes(report))
+        with self.assertRaisesRegex(AcceptanceError, "incomplete scientific measurements"):
+            require_acceptance(self.candidate, self.report_path, self.source)
 
     def test_arbitrary_success_flag_and_unsupported_version_rejected(self):
         self.report_path.parent.mkdir(parents=True)
@@ -236,7 +250,7 @@ class ArchiveValidation(unittest.TestCase):
             require_acceptance(self.candidate, self.report_path, self.source)
 
     def test_req_missing_pressure_remains_undefined(self):
-        self.geo.write_text(self.geo.read_text().replace(",Q,12.345678,-150.123456,0,10000,", ",D,12.345678,-150.123456,0,,"))
+        self.geo.write_text(self.geo.read_text().replace(",Q,,,12.345678,-150.123456,10000,", ",D,,,12.345678,-150.123456,,"))
         reference = SACTrace.read(str(self.sac))
         reference.stdp = None
         reference.write(str(self.sac))
@@ -322,7 +336,7 @@ class ArchiveValidation(unittest.TestCase):
 
     def test_one_mseed_with_two_eligible_rows_blocks(self):
         row = next(line for line in self.geo.read_text().splitlines()
-                   if line.startswith('Derivation:Recording:'))
+                   if line.startswith('waveform,'))
         self.geo.write_text(self.geo.read_text() + row.replace('00:00:00.000000Z', '00:00:00.000001Z') + '\n')
         self.candidate = create_snapshot(self.source, self.root / 'ambiguous', self.inventory)
         report = self.validate()

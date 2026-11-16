@@ -1,13 +1,13 @@
 # Publication evidence and snapshot changes
 
-Publisher >= 0.8.0 requires consumer >= 0.29.0 and validation report schema 5
-for dataset-first payloads in the MERMAID 1.0.0 schema family. Historical evidence
+Publisher >= 0.9.0 requires consumer >= 0.30.0 and validation report schema 6
+for dataset-first payloads in the MERMAID rc2 schema. Historical evidence
 is immutable. Every candidate requires matching fresh acceptance; acceptance
 does not authorize uploads or production.
 
 ## Recording coverage and names
 
-Every Recording source_index must have at least one passing original
+Every waveform source_index must have at least one passing original
 MiniSEED/SAC pair. There is no exception or waiver. One original MiniSEED must
 match exactly one row; repeated originals may match the same row. Basenames
 must be unique per instrument. Reports use mseed_filename and sac_filename;
@@ -45,7 +45,7 @@ Scientific estimation and its validation belong to the automaid version in the
 GeoCSV producer header and scientific publication. Measurement rows supply
 observations; derived times/locations are best estimates supplied in the hope
 that they are useful. Researchers may reinterpolate measurements. Consumer SAC
-station-depth projection remains WaterPressure/100 metres, with source mbar.
+station-depth projection remains measured_pressure/100 metres, with source mbar.
 
 ## Published reports
 
@@ -70,47 +70,6 @@ Initial publication has a null predecessor and reports all rows as additions.
 Publication reads the current testing latest once, verifies its manifest and
 payload hashes, and binds the comparison to that exact predecessor. Edits and
 deletions fail by default; --allow-metadata-changes explicitly allows them.
-An automaid revision change alone in a Recording or crossing MethodIdentifier
-does not require this override when all other row bytes are identical. The
-exact diff still includes both original rows for provenance. Other field or
-formatting changes, row deletions, and reordering still require review; sensor
-revisions and producer-like strings in other fields are not exempt.
-A payload-schema mismatch writes 'simple diff cannot be made' and requires
---allow-schema-change. These options cannot waive scientific comparisons,
-unique associations, Recording coverage or valid producer-report binding.
-A failed comparison leaves the generated diff/mapping files available for
-local review and blocks before uploads. comparison.json is frozen only after
-the selected policy passes. First-publication additions need
-neither override. The --plan command checks local evidence only, without storage
-access; remote predecessor comparison occurs during actual authorized publication.
-
-Reports freeze under testing/reports/{component}/. comparison.json records both
-snapshot identities, manifest hashes, validation hash, report hashes and selected
-overrides. An identical retry retains its original predecessor. Existing report
-bytes cannot be overwritten. Public HTTPS verification covers every auxiliary
-report before conditional latest activation. Receipts bind their checksums;
-archive commit and network-free receipt recovery include them. Old receipts
-without auxiliary reports retain their original recovery behavior.
-
-The host serves these objects read-only and lists reports when present. Worker
-route support was deployed on 2026-11-03; new report objects require a separately
-authorized publication and exact public-byte verification. The
-future Metadata Changes website page is outside this implementation scope.
-
-IcCycle and Init waveform paths are excluded from publisher validation and accounting.
-Directory or filename components containing `IcCycle` or `Init` (case-insensitive) are
-skipped before opening or fingerprinting files, including for recordless-source
-checks. GeoCSV is copied verbatim: Recording rows supported only by excluded
-waveforms still fail mandatory coverage. The clean-source Git requirement is
-unchanged. Publisher 0.6.1 requires fresh validation evidence for this scope;
-existing reports and snapshots remain immutable.
-
-Automaid v4.9.2 collects measurements from Init and IcCycle, but excludes their
-Recording and crossing rows. Normal output uses the deployment window and
-retained GPS span. `outside_filterDate_gps.geocsv` retains excluded formatted
-rows locally; it is not uploaded. Publisher acceptance checks GPS bracketing
-for every normal row independently of producer selection.
-This aligns derived output with publisher 0.6.1 waveform scope.
-Earlier generations may still have unmatched Recording rows after IcCycle/Init
-waveforms are excluded; they require producer regeneration, not a coverage
-waiver or publisher rewrite. Existing artifacts remain immutable.
+`--allow-metadata-changes` permits reviewed row edits, deletions, or reordering
+in a comparison between rc2 snapshots. The initial publication has no
+predecessor. Header comments are outside the scientific row diff.

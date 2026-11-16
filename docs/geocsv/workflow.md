@@ -36,7 +36,7 @@ storage and round trips. See the
 ## Sources and archive
 
 Creation and candidate inspection require first-line `# dataset: GeoCSV 2.0`,
-one supported MERMAID 1.0.0-family `schema` declaration and a literal six-digit
+the MERMAID 1.0.0-rc2 `schema` declaration and a literal six-digit
 UTC `created` declaration, including recordless sources. Duplicate schema
 declarations and comments after the column header raise; quoted multiline
 values remain data.
@@ -98,9 +98,15 @@ under the same ID raises. Do not edit frozen manifests or historical reports.
 
 ### Local validation without publication
 
-Use an ordinary temporary workspace for a full-corpus check. These commands
-assume `MERMAID_PUBLISHER_GEOCSV_CONFIG` names the private configuration
-directory; otherwise supply `--inventory` explicitly:
+For rc2, start after the automaid 4.11.2 processed rebuild finishes. Check
+that all included GeoCSV files declare `1.0.0-rc2` and share one creation
+timestamp. Use the MiniSEED/SAC pairs from that same rebuild, including the
+revised MDH location codes. The publisher requires consumer 0.30.0 and
+generates report schema 6.
+
+Use an ordinary temporary workspace for a full-corpus check. Supply the
+inventory with `--inventory` or set the private configuration directory in
+`MERMAID_PUBLISHER_GEOCSV_CONFIG` as shown here.
 
 ```bash
 GEOCSV_CHECK_WORKSPACE="$(mktemp -d)"
@@ -140,7 +146,7 @@ is immutable. Unknown or duplicate IDs raise. Recordless sources in scope
 are excluded and inventoried. Supply `--previous-manifest` after first publication
 to detect unexpectedly missing instruments. Pause upstream processing first.
 
-Create, validate and publish use the same frozen manifest. Publishing has no
+Create, validate and publish use the same frozen manifest. The initial testing publication requires a collection with no selected baseline. Subsequent comparisons use the selected rc2 snapshot. Publishing has no
 instrument-selection switch. Omit `--instruments` at creation for the complete
 corpus; use an explicit selection only for an authorized subset. Every frozen
 inventory needs its own matching report. The archive retains that candidate's
@@ -149,13 +155,13 @@ payloads and evidence; original waveform archives are not copied into it.
 Within one local or hosted collection, a timestamp identifies exactly one
 immutable inventory. Changing selection under an existing timestamp raises;
 use separate local workspaces for different check batches. Expanding an already
-hosted inventory requires a new upstream timestamp, not an edited manifest.
+hosted inventory requires a new upstream timestamp.
 
 Using the candidate ID printed by creation, set a task-specific shell variable:
 
 ```bash
-GEOCSV_CANDIDATE="$MERMAID/publisher/geocsv/testing/snapshots/2026-11-05T23-41-47.235000Z"
-GEOCSV_REPORT="$MERMAID/publisher/geocsv/testing/validation/2026-11-05T23-41-47.235000Z/validation-new-attempt.json"
+GEOCSV_CANDIDATE="$MERMAID/publisher/geocsv/testing/snapshots/<release-component>"
+GEOCSV_REPORT="$MERMAID/publisher/geocsv/testing/validation/<release-component>/validation-new-attempt.json"
 .venv/bin/python scripts/geocsv/validate_snapshot.py \
   --candidate "$GEOCSV_CANDIDATE" --source-root "$MERMAID/processed" \
   --report "$GEOCSV_REPORT"
@@ -185,7 +191,7 @@ from any alternative endpoint; changing a hostname alone does not establish that
 
 An existing published candidate can be revalidated locally without recreating
 it or changing its hosted evidence. Inspect the actual consumer revision and
-public imports, verify dataset-first 1.0.0-family support and the freshly installed consumer
+public imports, verify dataset-first rc2 support and the freshly installed consumer
 before running validation. Retain previous reports unchanged: the acceptance
 gate rejects reports whose software fingerprints differ from the current
 installation, even when the package version is unchanged.

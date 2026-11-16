@@ -156,13 +156,13 @@ def verify_https(url, expected):
 
 
 def require_fetch_consumer():
-    """Reject the historical download protocol before any object writes."""
+    """Require the current GeoCSV consumer before any object writes."""
     from mermaid import geocsv
-    if tuple(int(part) for part in geocsv.__version__.split(".")) < (0, 29, 0):
-        raise ValueError("schema 1.0.0 publication requires mermaid-geocsv >= 0.29.0")
+    if tuple(int(part) for part in geocsv.__version__.split(".")) < (0, 30, 0):
+        raise ValueError("publication requires mermaid-geocsv >= 0.30.0")
 
 
-def _transfer_and_verify(candidate, report, store, base_url, *, object_prefix, accepted=None, report_fingerprint=None, before_activation=None, allow_metadata_changes=False, allow_schema_change=False):
+def _transfer_and_verify(candidate, report, store, base_url, *, object_prefix, accepted=None, report_fingerprint=None, before_activation=None, allow_metadata_changes=False):
     """Publication sequence, reachable from the CLI only after scientific acceptance.
 
     Kept separate to test ordering and failures with an in-memory transport;
@@ -197,8 +197,7 @@ def _transfer_and_verify(candidate, report, store, base_url, *, object_prefix, a
             raise ValueError("current testing pointer is inconsistent")
         already_selected = old_id == release
     generated_reports = publication_reports(candidate, report, store, object_prefix, old_id,
-        already_selected=already_selected, allow_metadata_changes=allow_metadata_changes,
-        allow_schema_change=allow_schema_change)
+        already_selected=already_selected, allow_metadata_changes=allow_metadata_changes)
     paths = [(entry["filename"], candidate / entry["filename"]) for entry in manifest["files"]]
     bundle = create_bundle(candidate)
     frozen_bundle = fingerprint(bundle)
@@ -412,8 +411,6 @@ def main():
     parser.add_argument("--source-root", type=Path, help="read-only processed root")
     parser.add_argument('--allow-metadata-changes', action='store_true',
                         help='explicitly allow edits/deletions relative to previous latest')
-    parser.add_argument('--allow-schema-change', action='store_true',
-                        help='explicitly allow a schema mismatch without a simple diff')
     parser.add_argument("--plan", action="store_true", help="read-only local inspection and gate; no uploads or commits")
     parser.add_argument("--record-only", type=Path, metavar="RECEIPT", help="finish local Git recording after successful publication; no network")
     parser.add_argument("--base-url", help="explicit HTTPS testing collection URL")
@@ -423,7 +420,7 @@ def main():
     args = parser.parse_args()
     try:
         if args.record_only:
-            if any((args.candidate, args.report, args.source_root, args.plan, args.base_url, args.object_prefix, args.endpoint_url, args.bucket, args.allow_metadata_changes, args.allow_schema_change)):
+            if any((args.candidate, args.report, args.source_root, args.plan, args.base_url, args.object_prefix, args.endpoint_url, args.bucket, args.allow_metadata_changes)):
                 raise ValueError("--record-only must be used alone")
             try:
                 commit_publication(args.record_only)
@@ -465,7 +462,7 @@ def main():
                 candidate, args.report, store, base_url, object_prefix=object_prefix,
                 accepted=accepted, report_fingerprint=accepted_fingerprint,
                 before_activation=lambda: require_scientific_acceptance(candidate, args.report, args.source_root),
-                allow_metadata_changes=args.allow_metadata_changes, allow_schema_change=args.allow_schema_change)
+                allow_metadata_changes=args.allow_metadata_changes)
             try:
                 receipt = record_publication(candidate, args.report, base_url, object_prefix, already_selected=already_selected)
             except PublicationRecordingError:

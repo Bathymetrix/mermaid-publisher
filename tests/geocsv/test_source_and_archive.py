@@ -177,7 +177,7 @@ class ProvenanceGate(unittest.TestCase):
     def test_report_binds_provenance_and_rejects_source_tracking_changes(self):
         from gate_snapshot import require_acceptance
         report = self.validate()
-        self.assertEqual(report["schema_version"], 5)
+        self.assertEqual(report["schema_version"], 6)
         self.assertEqual(report["source_provenance_sha256"], fingerprint(self.candidate / "source_provenance.json")[1])
         initialize(self.source)
         git(self.source, "add", ".")

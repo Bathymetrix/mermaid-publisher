@@ -1,7 +1,7 @@
 # GeoCSV publication and download agreement
 
 This is the canonical snapshot, manifest and download contract. The consumer's
-[MERMAID schema 1.0.0-rc1](../../../mermaid-geocsv/docs/format-spec.md) defines
+[MERMAID payload schema](../../../mermaid-geocsv/docs/format-spec.md) defines
 payload semantics. Automaid writes scientific products; `mermaid-geocsv` owns
 fetch/read/associate and optional SAC station headers; this publisher owns
 snapshot creation, validation, gating, transfer and recording; the site owns
@@ -9,17 +9,18 @@ read-only hosting. See [workflow](workflow.md) and [SAC verification](sac-verifi
 
 ## Payload and software requirements
 
-Require Python >= 3.11 and consumer >= 0.29.0. Creation and inspection require
-dataset-first GeoCSV 2.0, an explicit supported 1.0.0-family schema and
+Require Python >= 3.11 and consumer >= 0.30.0. Creation and inspection require
+dataset-first GeoCSV 2.0, the MERMAID 1.0.0-rc2 schema and
 a six-digit UTC `created` value after header padding removal,
 including recordless sources. Repeated schema declarations and comments after
 the column header raise; quoted multiline continuations remain CSV data.
-Full parsing and scientific association belong to the consumer. Validation
-selects `Derivation:Recording:` rows and uses `Time`; it projects explicit
-Recording Elevation and never supplies missing source defaults.
+Full parsing and scientific association belong to the consumer. Rc2 coverage
+selects `waveform` rows and uses `derived_time` for matching, with `gps`
+`measured_time` bounding both time columns. The export leaves SAC elevation
+undefined.
 
 Package version, payload schema, report schema and literal snapshot identity
-are independent. Reports use schema 5 and `recording_rows`; they bind exact
+are independent. Reports use schema 6 and `recording_rows`. They bind exact
 inputs, validation code and dependencies. A report for another inventory or
 software revision cannot accept this candidate.
 
@@ -28,7 +29,7 @@ software revision cannot accept this candidate.
 Require `testing_only: true` in both manifest and latest, collection URLs ending
 in `/testing/` and object prefixes ending in `/testing`. Production activation
 is rejected by publisher commands. Testing and production pointers remain
-separate. The full-corpus snapshot `2026-11-05T23:41:47.235000Z` is approved for rc1 testing.
+separate.
 Production scope, licensing and formal release remain separate decisions. See [hosting status](../../../bathymetrix-site/docs/geocsv-hosting.md)
 and the [artifact evidence index](evidence.md).
 
@@ -146,7 +147,7 @@ Staging schema 1 records complete-source accounting for default creation.
 Staging schema 2 records a sorted, nonempty, unique `instrument_ids` array for
 explicit selections; its instrument entries must cover exactly that selection,
 including recordless exclusions. Both versions remain supported. Validation
-reports use schema 5.
+reports for the current validator use schema 6.
 
 The creator emits entries sorted by ID. Source provenance uses a
 processed-root-relative `source_path` (`<serial>/geo_DET_REQ.csv`) and
@@ -216,7 +217,7 @@ update latest last. Failures before activation leave the previous latest selecte
 An unconfirmed activation requires inspecting remote state before retrying. Serialize
 publication and use conditional object writes to prevent conflicting updates.
 
-The publisher owns `scripts/geocsv/validate_snapshot.py`, the version 5 report
+The publisher owns `scripts/geocsv/validate_snapshot.py`, the version 6 report
 format and `scripts/geocsv/gate_snapshot.py`. Validation covers every original
 MiniSEED and independently read paired SAC for included instruments; `.mhpsd`
 spectra are outside scope and are not counted. Missing pairs, unsupported
@@ -282,25 +283,11 @@ to bracket every row of each nonempty dataset, with inclusive bounds and no
 time tolerance. Missing GPS or an out-of-span row blocks publication. This is
 a publication policy, not a consumer parsing or interpolation rule.
 
-Producer revision changes alone in Recording/crossing MethodIdentifiers do
-not require a metadata-change override when the rest of each row is identical.
-Exact diffs still retain those provenance changes. Other edits, deletions and
-reordering remain subject to the explicit metadata-change gate.
-Earlier generations may still have unmatched Recording rows after IcCycle/Init
-waveforms are excluded; they require producer regeneration, not a coverage
-waiver or publisher rewrite. Existing artifacts remain immutable.
+Snapshot diffs compare exact rc2 CSV records. Data edits and deletions
+require explicit review. The producer version is in a header comment.
 
-## PPHC header and testing schema
+## Testing payload
 
-The writer emits dataset-first GeoCSV 2.0 with `schema: MERMAID GeoCSV
-v1.0.0-rc1`, padded comment keywords, unquoted comma/LF declarations and
-producer/publisher/hoster/consumer project descriptions. `references` is reserved
-for the describing paper and omitted until its DOI exists. Final schema 1.0.0
-is reserved for paper publication. Testing accepts the 1.0.0 version family,
-retains the exact revision and applies all scientific requirements.
-
-This header requires consumer >= 0.29.0 and publisher >= 0.8.0. Testing latest
-serves the full-corpus rc1 snapshot `2026-11-05T23:41:47.235000Z`. Older retained
-snapshots keep their original headers and may be incompatible with this reader.
-Canonical sources remain read-only. Testing publication does not authorize
-production activation or retirement.
+Automaid 4.11.2 emits `MERMAID GeoCSV v1.0.0-rc2`. Consumer 0.30.0
+reads this layout and publisher 0.9.0 validates it with report schema 6.
+Use a fresh candidate and report for the completed rebuild.

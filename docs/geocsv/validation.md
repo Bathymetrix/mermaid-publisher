@@ -1,9 +1,9 @@
-# GeoCSV snapshot validation and report version 5
+# GeoCSV snapshot validation and report version 6
 
 `mermaid-publisher/scripts/geocsv/validate_snapshot.py` orchestrates the public
 `mermaid-geocsv` read → associate(create_sac_header=True) APIs, followed by
-publisher-only export checks and ObsPy writing. Consumer >= 0.29.0 and
-dataset-first MERMAID 1.0.0-family payloads are required. Validation requires Python 3.11+,
+publisher-only export checks and ObsPy writing. Consumer >= 0.30.0 and
+dataset-first MERMAID 1.0.0-rc2 payloads are required. Validation requires Python 3.11+,
 `mermaid-geocsv` with its ObsPy extra, and original local MiniSEED/SAC inputs.
 The source tree is read-only. Temporary exports, frozen products and reports
 may use an ordinary temporary workspace, separate from the source tree and
@@ -51,7 +51,7 @@ run rather than being silently omitted. Default creation retains staging schema
 1 and complete-source accounting. Explicit selections use staging schema 2,
 whose `instrument_ids` must match exactly the instrument entries; unselected
 instruments are outside validation scope. The sidecar hash binds that frozen
-scope without changing report schema 5. Empty GeoCSV files and the staging
+scope. Empty GeoCSV files and the staging
 sidecar are never uploaded. The public report records only the sidecar hash and
 recordless-exclusion count, not the excluded payloads.
 
@@ -77,7 +77,7 @@ its separate strict time/rate thresholds.
 | First sample time | Exported absolute UTC first-sample time is within 1,000 ns of native and independently read reference |
 | Latitude/longitude | Error at most `0.5e-6 + abs(spacing(float32(reference_coordinate)))` degrees |
 | Depth | Exact SAC float32 equality, or both SAC undefined (`None` through SACTrace) |
-| Elevation | Exported and reference STEL equal zero metres exactly |
+| Elevation | Rc2 exports leave STEL undefined and the producer reference stores zero metres. |
 
 The 1 microsecond timing criterion is a conservative fixture comparison limit,
 not a general claim about SAC accuracy or MERMAID physical clock resolution.
@@ -86,17 +86,17 @@ Sample intervals/rates remain scientifically meaningful independently of coarser
 absolute clock accuracy. Absolute start times are compared, not a particular
 split between SAC reference time and `b`.
 
-The package owns the geographic projection: latitude in degrees_north, longitude
-in degrees_east, explicit source Recording Elevation=0 metres for STEL, and approximate depth from WaterPressure
-in mbar divided by 100. This reproduces the producer's convention, not a physical
-pressure-to-depth model. REQ source quality D may omit pressure; depth remains
+The package owns the geographic projection. Rc2 uses estimated coordinates,
+leaves STEL undefined, and derives approximate depth from measured waveform
+pressure in mbar divided by 100.
+REQ source quality D may omit pressure and leave depth
 undefined, without borrowing another record's value. Missing DET pressure fails
 during requested header creation. Scientific projection remains in the package;
 independent verification and all former exporter guards are retained in
 [`_verify_sac.py`](sac-verification.md).
 
 The report also fingerprints `_verify_sac.py`; changing its checks invalidates
-old acceptance evidence without changing schema 5 or scientific tolerances.
+old acceptance evidence. Scientific tolerances are fixed across the two payloads.
 See [SAC verification](sac-verification.md) for export preflight checks.
 
 No whole-SAC-header or byte equivalence is asserted. Calibration, instrument,
@@ -107,9 +107,11 @@ or counts-to-pressure conversion.
 ## Report schema
 
 A UTF-8 JSON object has `schema: "bathymetrix-geocsv-archive-validation"` and integer
-`schema_version: 5`. Unknown versions are rejected. Reports bind source provenance, publisher/package fingerprints and scientific
-limits. Instrument summaries use `recording_rows`, selected with
-`Derivation:Recording:`. Only report schema 5 is accepted. JSON creation rejects
+`schema_version: 6`. Reports bind source provenance, publisher/package
+fingerprints and scientific limits. Instrument summaries use
+`recording_rows` for `waveform` rows.
+The elevation check records whether the export leaves STEL undefined and the
+producer reference stores zero. JSON creation rejects
 NaN and infinity. Reports are created exclusively, retained separately from the frozen
 manifest, and use source-relative identifiers without machine-specific roots.
 
@@ -214,8 +216,7 @@ Validation and acceptance recompute GPS time bounds from each parsed dataset.
 Every row must be at or between the first and last Position measurement times;
 there is no tolerance. A nonempty dataset without GPS fails. Failure details
 identify offending source indices and physical lines. No measurement or derived
-row is repaired or filtered by the publisher. Schema 5 is unchanged; workflow
-fingerprints require fresh reports after this policy change.
+row is repaired or filtered by the publisher.
 Earlier generations may still have unmatched Recording rows after IcCycle/Init
 waveforms are excluded; they require producer regeneration, not a coverage
 waiver or publisher rewrite. Existing artifacts remain immutable.

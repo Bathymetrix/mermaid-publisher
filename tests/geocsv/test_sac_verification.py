@@ -1,7 +1,6 @@
 """Retain former exporter checks as publisher-only verification.
 
 All examples are synthetic. No canonical waveform source or archive is opened.
-The same checks run with the exact frozen consumer and the current consumer.
 """
 
 from dataclasses import replace
@@ -35,7 +34,7 @@ class SACVerification(unittest.TestCase):
         location = "" if empty_location else "00"
         source_location = '"  "' if empty_location else location
         content = (HEADER +
-            f"Derivation:Recording:automaid-v0,{start},MH,SYN01,{source_location},BDH,Q,12,-150,0,10000,MERMAID_synthetic,20,4,,0\n"
+            f"waveform,,{start},MH,SYN01,{source_location},BDH,Q,,,12,-150,10000,,20,4,,0\n"
         ).encode()
         trace = Trace(np.array([0, 1, -10, 16777217], dtype=np.int32), header={
             "network": "MH", "station": "SYN01", "location": location, "channel": "BDH",
@@ -71,7 +70,7 @@ class SACVerification(unittest.TestCase):
                 self.assertEqual(actual.stla, 12)
                 self.assertEqual(actual.stlo, -150)
                 self.assertEqual(actual.stdp, 100)
-                self.assertEqual(actual.stel, 0)
+                self.assertIsNone(actual.stel)
                 np.testing.assert_array_equal(actual.data, trace.data.astype(np.float32))
                 self.assertEqual(actual.data[-1], 16777216)
                 self.assertEqual(trace.stats, before.stats)
@@ -111,26 +110,26 @@ class SACVerification(unittest.TestCase):
         self.rejected(trace, "association-time loaded sample count")
 
     def test_incomplete_source_identity_count_start_and_quality_rejected(self):
-        for key in ("Station", "SampleCount", "Time", "DataQuality"):
+        for key in ("station", "sample_count", "derived_time", "data_quality"):
             trace = self.trace.copy()
             trace.stats.geocsv[key] = pd.NA
-            if key == "DataQuality":
-                trace.stats.geocsv.WaterPressure = pd.NA
+            if key == "data_quality":
+                trace.stats.geocsv.measured_pressure = pd.NA
             self.rejected(trace)
 
     def test_invalid_geographic_values_rejected(self):
-        for field, value in (("Latitude", pd.NA), ("Longitude", None), ("Latitude", 91),
-                             ("Longitude", -181), ("Latitude", np.inf),
-                             ("WaterPressure", pd.NA), ("WaterPressure", -1),
-                             ("WaterPressure", np.inf)):
+        for field, value in (("estimated_latitude", pd.NA), ("estimated_longitude", None), ("estimated_latitude", 91),
+                             ("estimated_longitude", -181), ("estimated_latitude", np.inf),
+                             ("measured_pressure", pd.NA), ("measured_pressure", -1),
+                             ("measured_pressure", np.inf)):
             with self.subTest(field=field, value=value):
                 trace = self.trace.copy()
                 trace.stats.geocsv[field] = value
                 self.rejected(trace)
 
     def test_declared_units_rejected(self):
-        for field, unit in (("Latitude", "radians"), ("Longitude", None),
-                            ("WaterPressure", "dbar"), ("SampleRate", "kilohertz")):
+        for field, unit in (("estimated_latitude", "radians"), ("estimated_longitude", None),
+                            ("measured_pressure", "dbar"), ("sample_rate", "kilohertz")):
             trace = self.trace.copy()
             metadata = trace.stats.geocsv.metadata
             trace.stats.geocsv.metadata = replace(metadata, field_units={**metadata.field_units, field: unit})
@@ -138,8 +137,8 @@ class SACVerification(unittest.TestCase):
 
     def test_missing_request_pressure_stays_undefined_and_is_not_borrowed(self):
         trace = self.trace.copy()
-        trace.stats.geocsv.WaterPressure = pd.NA
-        trace.stats.geocsv.DataQuality = "D"
+        trace.stats.geocsv.measured_pressure = pd.NA
+        trace.stats.geocsv.data_quality = "D"
         # Synthetic projected REQ case, independently checked against source D.
         trace.stats.sac.stdp = -12345.0
         write_verified_sac(trace, self.output)
@@ -169,32 +168,32 @@ class SACVerification(unittest.TestCase):
     def test_identity_storage_rejects_truncation_unicode_padding_and_null(self):
         for code in ("ABCDEFGHI", "SYNé", " PAD ", "-12345"):
             trace = self.trace.copy()
-            trace.stats.station = trace.stats.geocsv.Station = code
+            trace.stats.station = trace.stats.geocsv.station = code
             trace.stats.geocsv.association.waveform.station = code
             self.rejected(trace, "ASCII SAC identity")
 
     def test_numeric_header_overflow_underflow_and_null_collision_rejected(self):
-        for field, value in (("WaterPressure", 1e100), ("WaterPressure", 1e-100),
-                             ("WaterPressure", 5e-324), ("calib", 1e100),
+        for field, value in (("measured_pressure", 1e100), ("measured_pressure", 1e-100),
+                             ("measured_pressure", 5e-324), ("calib", 1e100),
                              ("calib", 1e-100), ("calib", -12345),
-                             ("calib", -12344.99999), ("SampleRate", 1e100)):
+                             ("calib", -12344.99999), ("sample_rate", 1e100)):
             trace = self.trace.copy()
             if field == "calib":
                 trace.stats.calib = value
             else:
                 trace.stats.geocsv[field] = value
-                if field == "SampleRate":
+                if field == "sample_rate":
                     trace.stats.sampling_rate = value
                     trace.stats.geocsv.association.waveform.sampling_rate_hz = value
             self.rejected(trace, "float32|undefined")
 
     def test_source_rate_exact_endpoint_and_next_float(self):
         boundary = self.trace.stats.sampling_rate + 0.00001
-        self.trace.stats.geocsv.SampleRate = boundary
+        self.trace.stats.geocsv.sample_rate = boundary
         write_verified_sac(self.trace, self.output)
         self.assertEqual(SACTrace.read(str(self.output)).delta, np.float32(self.trace.stats.delta))
         self.output.unlink()
-        self.trace.stats.geocsv.SampleRate = np.nextafter(boundary, np.inf)
+        self.trace.stats.geocsv.sample_rate = np.nextafter(boundary, np.inf)
         self.rejected(self.trace, "rate disagrees")
 
     def test_existing_output_is_preserved(self):

@@ -12,11 +12,11 @@ from _evidence import check_gps_bounds
 
 
 class GPSBounds(unittest.TestCase):
-    first = 'Measurement:Position:test,2020-01-01T00:00:00.000000Z,MH,PTEST,,,,12,-150,,,MERMAID_test,,,,\n'
+    first = 'gps,2020-01-01T00:00:00.000000Z,,MH,PTEST,,,,12,-150,,,,,,,,\n'
     last = first.replace('00:00:00.000000Z', '01:00:00.000000Z')
-    pressure = 'Measurement:Pressure-Absolute:test,TIME,MH,PTEST,,,,,,,1000,MERMAID_test,,,,\n'
-    recording = 'Derivation:Recording:automaid-v0,TIME,MH,PTEST,00,BDH,Q,12,-150,0,1000,MERMAID_test,20,4,,0\n'
-    crossing = 'Interpolation:Crossing-Ascent:automaid-v0,TIME,MH,PTEST,,,,12,-150,,5000,MERMAID_test,,,,\n'
+    pressure = 'pressure,TIME,,MH,PTEST,,,,,,,,1000,,,,,\n'
+    recording = 'waveform,,TIME,MH,PTEST,00,BDH,Q,,,12,-150,1000,,20,4,,0\n'
+    crossing = 'upcrossing,,TIME,MH,PTEST,,,,,,12,-150,,5000,,,,\n'
 
     def check(self, rows):
         check_gps_bounds(geocsv.read((HEADER + rows).encode()))

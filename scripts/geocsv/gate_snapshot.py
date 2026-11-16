@@ -1,4 +1,4 @@
-"""Version 5 exhaustive snapshot evidence and publication gate for MERMAID GeoCSV."""
+"""Version 6 exhaustive snapshot evidence and publication gate for MERMAID GeoCSV."""
 
 import importlib.metadata
 import math
@@ -10,7 +10,7 @@ import sys
 from inspect_snapshot import check_instrument, check_source_provenance, fingerprint, inspect_source_geocsv, read_json, verify_candidate
 
 SCHEMA = "bathymetrix-geocsv-archive-validation"
-VERSION = 5
+VERSION = 6
 CHECKS = (
     "strict_association", "identity", "sample_count", "samples_native",
     "samples_reference", "sample_interval", "start_native", "start_reference",
@@ -35,7 +35,7 @@ MEASUREMENTS = {
     "sample_error_native_counts", "sample_error_reference_counts", "interval_error_seconds",
     "interval_native_error_seconds", "interval_reference_ulps",
     "start_native_ns", "start_reference_ns", "latitude_error_deg", "latitude_limit_deg",
-    "longitude_error_deg", "longitude_limit_deg", "depth_error_m", "elevation_error_m",
+    "longitude_error_deg", "longitude_limit_deg", "depth_error_m",
 }
 
 
@@ -238,7 +238,7 @@ def check_measurements(pair):
         if type(value) not in (int, float) or not math.isfinite(value) or value < 0:
             raise AcceptanceError(f"invalid scientific measurement: {name}")
     for name in ("sample_count_error", "sample_error_native_counts", "sample_error_reference_counts",
-                 "interval_native_error_seconds", "elevation_error_m"):
+                 "interval_native_error_seconds"):
         if values[name] != 0:
             raise AcceptanceError(f"nonzero exact-comparison error: {name}")
     if values["depth_error_m"] not in (None, 0):
@@ -323,8 +323,8 @@ def require_acceptance(candidate, report_path, source_root):
         entry = geo_by_id[item['instrument_id']]
         selected_pairs = [pair for pair in pairs if pair['instrument_id'] == item['instrument_id']]
         try:
-            evidence = recording_evidence(candidate, entry,
-                geocsv.read(Path(candidate) / entry['filename']), selected_pairs)
+            tables = geocsv.read(Path(candidate) / entry['filename'])
+            evidence = recording_evidence(candidate, entry, tables, selected_pairs)
         except (OSError, ValueError) as exc:
             raise AcceptanceError(str(exc)) from exc
         if any(item.get(key) != value for key, value in evidence.items()):

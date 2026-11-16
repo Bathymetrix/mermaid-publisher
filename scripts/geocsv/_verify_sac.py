@@ -50,11 +50,10 @@ def write_verified_sac(trace, path):
         raise ValueError("SAC verification requires attached GeoCSV dataset metadata")
 
     # Check the association-time waveform without reopening any source file.
-    for field, key in (("Network", "network"), ("Station", "station"),
-                       ("Location", "location"), ("Channel", "channel")):
-        code = source.get(field)
+    for key in ("network", "station", "location", "channel"):
+        code = source.get(key)
         # The source keeps its two-space known blank; SAC uses the waveform code.
-        compared = "" if field == "Location" and code == "  " else code
+        compared = "" if key == "location" and code == "  " else code
         if (not isinstance(code, str) or compared != trace.stats[key]
                 or waveform.get(key) != trace.stats[key]):
             raise ValueError(f"{trace.id}: waveform {key} differs from its association")
@@ -62,7 +61,7 @@ def write_verified_sac(trace, path):
                 or compared == "-12345"):
             raise ValueError(f"{trace.id}: {key} cannot be preserved in an "
                              "eight-byte ASCII SAC identity header")
-    count = source.get("SampleCount")
+    count = source.get("sample_count")
     associated_count = waveform.get("sample_count")
     if (not len(trace.data) or np.ma.is_masked(trace.data)
             or len(trace.data) != trace.stats.npts
@@ -80,7 +79,7 @@ def write_verified_sac(trace, path):
     if (not np.isfinite(samples).all()
             or np.any((trace.data != 0) & (samples == 0))):
         raise ValueError(f"{trace.id}: samples cannot be represented in SAC float32 storage")
-    source_start = pd.Timestamp(source.get("Time"))
+    source_start = pd.Timestamp(source.get("derived_time"))
     difference = association.get("waveform_start_offset_seconds")
     associated_start = waveform.get("starttime")
     if (not isinstance(associated_start, UTCDateTime)
@@ -89,8 +88,8 @@ def write_verified_sac(trace, path):
             or difference is None or pd.isna(difference) or not isfinite(float(difference))
             or trace.stats.starttime.ns != source_start.value + round(difference * 1e9)):
         raise ValueError(f"{trace.id}: waveform start differs from its association")
-    rate = source.get("SampleRate")
-    if (metadata.field_units.get("SampleRate") != "hertz"
+    rate = source.get("sample_rate")
+    if (metadata.field_units.get("sample_rate") != "hertz"
             or rate is None or pd.isna(rate) or not isfinite(float(rate))
             or waveform.get("sampling_rate_hz") != trace.stats.sampling_rate
             or not isfinite(trace.stats.sampling_rate) or trace.stats.sampling_rate <= 0
@@ -101,14 +100,10 @@ def write_verified_sac(trace, path):
     if _float32_value(trace.stats.calib, f"{trace.id}: calib") == -12345:
         raise ValueError(f"{trace.id}: calib collides with the SAC undefined value")
 
-    elevation = source.get("Elevation")
-    if (metadata.field_units.get("Elevation") != "meters" or elevation is None
-            or pd.isna(elevation) or not isfinite(float(elevation)) or elevation != 0):
-        raise ValueError(f"{trace.id}: requires explicit zero Recording Elevation in meters")
-    headers = {"stel": float(elevation)}
+    headers = {"stel": None}
     for field, key, unit, lower, upper in (
-        ("Latitude", "stla", "degrees_north", -90, 90),
-        ("Longitude", "stlo", "degrees_east", -180, 180),
+        ("estimated_latitude", "stla", "degrees_north", -90, 90),
+        ("estimated_longitude", "stlo", "degrees_east", -180, 180),
     ):
         value = source.get(field)
         if metadata.field_units.get(field) != unit:
@@ -118,18 +113,18 @@ def write_verified_sac(trace, path):
             raise ValueError(f"{trace.id}: requires valid {field}")
         headers[key] = float(value)
 
-    pressure = source.get("WaterPressure")
+    pressure = source.get("measured_pressure")
     if pressure is None or pd.isna(pressure):
-        quality = source.get("DataQuality")
+        quality = source.get("data_quality")
         if not isinstance(quality, str) or quality != "D":
-            raise ValueError(f"{trace.id}: missing WaterPressure; "
-                             "only REQ source records (DataQuality D) may omit depth")
+            raise ValueError(f"{trace.id}: missing measured_pressure; "
+                             "only REQ source records (data_quality D) may omit depth")
         headers["stdp"] = None  # SAC undefined; never infer another record's depth.
     else:
-        if metadata.field_units.get("WaterPressure") != "mbar":
-            raise ValueError(f"{trace.id}: WaterPressure requires declared units mbar")
+        if metadata.field_units.get("measured_pressure") != "mbar":
+            raise ValueError(f"{trace.id}: measured_pressure requires declared units mbar")
         if not isfinite(float(pressure)) or pressure < 0:
-            raise ValueError(f"{trace.id}: requires finite nonnegative WaterPressure")
+            raise ValueError(f"{trace.id}: requires finite nonnegative measured_pressure")
         # Automaid convention: 100 mbar = 1 dbar, treated as approximately 1 m.
         headers["stdp"] = float(pressure) / 100
         if pressure != 0 and headers["stdp"] == 0:
