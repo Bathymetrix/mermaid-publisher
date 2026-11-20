@@ -51,6 +51,7 @@ The same relative download agreement applies within a chosen collection:
 
 ```text
 latest.json
+latest
 latest/
 latest/<instrument_id>.geocsv
 releases/<release-component>/manifest.json
@@ -59,8 +60,9 @@ releases/<release-component>/validation.json
 releases/<release-component>/MERMAID.geocsv.tar.gz
 ```
 
-The browser path `latest/` returns a temporary 302 redirect to the selected
-`releases/<release-component>/` directory. It reads the collection's latest
+The browser paths `latest` and `latest/` each return a temporary 302 redirect
+directly to the selected `releases/<release-component>/` directory.
+Each redirect reads the collection's latest
 pointer on every request and uses `Cache-Control: no-store, max-age=0`.
 It returns 404 when no release is selected. Convenience latest file paths
 also return temporary 302 redirects. Fetch resolves
